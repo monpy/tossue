@@ -28,7 +28,7 @@ Chrome 拡張機能の技術アーキテクチャを定義する。
 ## Directory Structure
 
 ```
-extension/
+packages/extension/
 ├── src/
 │   ├── background/
 │   │   └── index.ts           # Service Worker
@@ -200,17 +200,22 @@ export type SelectedArea = {
 ## Development Workflow
 
 ```bash
-# Install dependencies
-cd extension
+# Install all dependencies (from root)
 npm install
 
 # Development with HMR
-npm run dev
+npm run dev:extension
 
 # Production build
-npm run build
+npm run build:extension
 
 # Type check
+npm run typecheck:extension
+
+# Or work directly in the package
+cd packages/extension
+npm run dev
+npm run build
 npm run typecheck
 ```
 
