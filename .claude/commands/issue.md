@@ -49,7 +49,7 @@ Enter plan mode and create a detailed implementation plan:
 2. Identify files that need to be modified
 3. Design the solution approach
 4. Consider edge cases and potential impacts
-5. Write plan to `.claude/plans/<issue_number>.md` for user approval
+5. Write plan to `.plans/<issue_number>.md` for user approval
 
 ### 5. Create Working Branch
 
