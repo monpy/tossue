@@ -17,23 +17,23 @@
     "http://127.0.0.1:47321/*"
   ],
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "src/background/index.ts",
     "type": "module"
   },
   "side_panel": {
-    "default_path": "sidepanel.html"
+    "default_path": "src/sidepanel/index.html"
   },
   "action": {
     "default_title": "Tossue"
   },
-  "devtools_page": "devtools.html",
+  "devtools_page": "src/devtools/index.html",
   "content_scripts": [
     {
       "matches": [
         "<all_urls>"
       ],
       "js": [
-        "content.js"
+        "src/content/index.ts"
       ],
       "run_at": "document_start"
     }
@@ -41,7 +41,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "styles.css"
+        "src/styles/global.css"
       ],
       "matches": [
         "<all_urls>"

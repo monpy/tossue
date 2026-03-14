@@ -1,5 +1,5 @@
 chrome.devtools.panels.create(
   "Tossue",
   "",
-  "devtools-panel.html"
+  "src/devtools/panel/index.html"
 );
