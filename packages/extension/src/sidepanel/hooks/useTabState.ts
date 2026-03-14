@@ -5,12 +5,15 @@ import {
   labelPresets,
   selectedLabels,
   issueOptions,
+  selectAreaButtonText,
+  captureButtonText,
+  DEFAULT_LABEL_PRESETS,
 } from "../store/signals";
+import { refreshHelperState } from "./useHelper";
 import type { TabState, Message } from "../../shared/types";
 
 const LABEL_STORAGE_KEY = "labelPresets";
 const ISSUE_OPTIONS_STORAGE_KEY = "issueOptions";
-const DEFAULT_LABEL_PRESETS = ["bug", "needs-triage", "diagnostics", "ui", "high-priority"];
 
 export function useTabState() {
   useEffect(() => {
@@ -41,7 +44,7 @@ async function bootstrap() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId.value = tab?.id ?? null;
   await Promise.all([loadLabelPresets(), loadIssueOptions()]);
-  await refreshState();
+  await Promise.all([refreshState(), refreshHelperState()]);
 }
 
 export async function refreshState() {
@@ -56,6 +59,11 @@ export async function refreshState() {
 
   currentState.value = response.state;
   hydrateLabels(response.state.draft?.labels || []);
+
+  // Update button texts based on state
+  const area = response.state.selectedArea;
+  selectAreaButtonText.value = area ? "Select Again" : "Select Area";
+  captureButtonText.value = "Start Capture";
 }
 
 export async function persistDraft() {
