@@ -32,7 +32,9 @@ export type MessageType =
   | "DEVTOOLS_EVENT"
   | "STATE_UPDATED"
   | "TAB_RECORDING_FRAME"
-  | "TAB_RECORDING_STOPPED";
+  | "TAB_RECORDING_STOPPED"
+  | "DEVTOOLS_STATUS_UPDATE"
+  | "GET_DEVTOOLS_STATUS";
 
 export type Message = {
   type: MessageType;
@@ -51,6 +53,11 @@ export type DevtoolsEventPayload = {
   entry: ConsoleEntry | NetworkEntry;
 };
 
+export type DevtoolsStatus = {
+  panelOpen: boolean;
+  debuggerAttached: boolean;
+};
+
 export type MessageResponse = {
   ok: boolean;
   error?: string;
@@ -61,4 +68,5 @@ export type MessageResponse = {
   highlighted?: boolean;
   cleared?: boolean;
   screenshotDataUrl?: string;
+  devtoolsStatus?: DevtoolsStatus;
 };

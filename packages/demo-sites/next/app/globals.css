@@ -1,0 +1,132 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  margin: 0;
+  color: #333;
+}
+
+header p {
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.card p {
+  color: #666;
+  line-height: 1.5;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #0066cc;
+  color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+button:hover {
+  background: #0052a3;
+}
+
+button.danger {
+  background: #cc3300;
+}
+
+button.danger:hover {
+  background: #a32900;
+}
+
+.status {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.counter-demo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.counter-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #e8f4ff;
+  border-radius: 4px;
+}
+
+.counter-display .label {
+  color: #666;
+}
+
+.counter-display .value {
+  font-weight: bold;
+  color: #0066cc;
+  font-size: 1.25rem;
+}
+
+.nested-component {
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  background: #fafafa;
+}
+
+.component-label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.children {
+  padding-left: 1rem;
+  border-left: 2px solid #0066cc;
+}

@@ -7,6 +7,7 @@ import type {
   Message,
   MessageResponse,
   DevtoolsEventPayload,
+  DevtoolsStatus,
 } from "../shared/types";
 
 const MAX_ACTIONS = 25;
@@ -18,6 +19,7 @@ const STORAGE_KEYS = {
 
 const tabState = new Map<number, TabState>();
 const screencastSessions = new Map<number, { attachedAt: number }>();
+const devtoolsStatus = new Map<number, DevtoolsStatus>();
 let nextActionId = 1;
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -108,6 +110,11 @@ async function handleMessage(
     case "DEVTOOLS_EVENT":
       ingestDevtoolsEvent(tabId, message.payload as DevtoolsEventPayload);
       return await respondWithState(tabId);
+    case "DEVTOOLS_STATUS_UPDATE":
+      updateDevtoolsStatus(tabId, message.payload as Partial<DevtoolsStatus>);
+      return {};
+    case "GET_DEVTOOLS_STATUS":
+      return { devtoolsStatus: getDevtoolsStatus(tabId) };
     default:
       throw new Error(`Unsupported message type: ${message.type}`);
   }
@@ -525,4 +532,32 @@ async function persistDefaultRepo(repo: string | undefined): Promise<void> {
   await chrome.storage.local.set({
     [STORAGE_KEYS.defaultRepo]: String(repo || "").trim(),
   });
+}
+
+function getDevtoolsStatus(tabId: number | undefined): DevtoolsStatus {
+  if (!tabId) {
+    return { panelOpen: false, debuggerAttached: false };
+  }
+  return devtoolsStatus.get(tabId) || { panelOpen: false, debuggerAttached: false };
+}
+
+function updateDevtoolsStatus(
+  tabId: number | undefined,
+  patch: Partial<DevtoolsStatus>
+): void {
+  if (!tabId) return;
+  const current = getDevtoolsStatus(tabId);
+  const updated = { ...current, ...patch };
+  devtoolsStatus.set(tabId, updated);
+  broadcastDevtoolsStatus(tabId, updated);
+}
+
+function broadcastDevtoolsStatus(tabId: number, status: DevtoolsStatus): void {
+  chrome.runtime
+    .sendMessage({
+      type: "DEVTOOLS_STATUS_UPDATE",
+      tabId,
+      payload: status,
+    })
+    .catch(() => {});
 }

@@ -4,6 +4,7 @@ import type {
   HelperState,
   RecordingState,
   IssueOptions,
+  DevtoolsStatus,
 } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
 
@@ -102,3 +103,8 @@ export const pendingCaptureId = signal<number>(0);
 export const selectAreaButtonText = signal<string>("Select Area");
 export const captureButtonText = signal<string>("Start Capture");
 export const recordingButtonText = signal<string>("Start Recording");
+
+export const devtoolsStatus = signal<DevtoolsStatus>({
+  panelOpen: false,
+  debuggerAttached: false,
+});
