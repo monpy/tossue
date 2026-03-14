@@ -1,4 +1,5 @@
 import { issueTitle, markdown, statusMessage } from "../store/signals";
+import { Button, Card } from "./ui";
 
 export function MarkdownPreview() {
   const handleCopy = async () => {
@@ -8,13 +9,13 @@ export function MarkdownPreview() {
 
   // Use signals directly in JSX - @preact/signals handles reactivity automatically
   return (
-    <section class="card">
+    <Card>
       <div class="section-title-row">
         <h2>Markdown Preview</h2>
         <div class="button-row">
-          <button id="copyMarkdown" class="secondary" onClick={handleCopy}>
+          <Button id="copyMarkdown" variant="secondary" onClick={handleCopy}>
             Copy
-          </button>
+          </Button>
         </div>
       </div>
       <label>
@@ -28,6 +29,6 @@ export function MarkdownPreview() {
         value={markdown}
         readOnly
       />
-    </section>
+    </Card>
   );
 }

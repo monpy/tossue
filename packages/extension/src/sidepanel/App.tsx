@@ -2,6 +2,7 @@ import { useTabState, refreshState } from "./hooks/useTabState";
 import { useRecording } from "./hooks/useRecording";
 import { useCapture } from "./hooks/useCapture";
 import { useDevtoolsStatus } from "./hooks/useDevtoolsStatus";
+import { Button, Card } from "./components/ui";
 import { HelperStatus } from "./components/HelperStatus";
 import { DevToolsStatus } from "./components/DevToolsStatus";
 import { ReportForm } from "./components/ReportForm";
@@ -23,15 +24,15 @@ export function App() {
           <p class="eyebrow">AI-ready issue composer</p>
           <h1>Tossue</h1>
         </div>
-        <button id="refreshState" class="secondary" onClick={refreshState}>
+        <Button id="refreshState" variant="secondary" onClick={refreshState}>
           Refresh
-        </button>
+        </Button>
       </header>
 
-      <section class="card grid">
+      <Card class="grid">
         <HelperStatus />
         <DevToolsStatus />
-      </section>
+      </Card>
 
       <ReportForm />
       <CaptureTools />

@@ -78,16 +78,6 @@ h3 {
   font-size: 14px;
 }
 
-.card {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  background: rgba(255, 252, 246, 0.92);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: 0 8px 30px rgba(62, 42, 18, 0.06);
-}
-
 .auth-toolbar {
   display: grid;
   gap: 10px;
@@ -189,15 +179,6 @@ h3 {
   gap: 10px;
 }
 
-.capture-tool-card {
-  display: grid;
-  gap: 8px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 247, 234, 0.68);
-}
-
 .capture-tool-head {
   display: flex;
   align-items: center;
@@ -281,17 +262,6 @@ h3 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.action-icon-button {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border-radius: 999px;
-  background: rgba(27, 26, 23, 0.08);
-  color: var(--text);
-  font-size: 13px;
-  line-height: 1;
 }
 
 .action-cutline {
@@ -451,34 +421,6 @@ textarea {
 
 textarea {
   resize: vertical;
-}
-
-button {
-  border: 0;
-  border-radius: 999px;
-  background: var(--accent);
-  color: white;
-  padding: 10px 14px;
-  cursor: pointer;
-  font-weight: 700;
-}
-
-button.secondary {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-button.icon-only {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  font-size: 15px;
-  line-height: 1;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .summary-box,

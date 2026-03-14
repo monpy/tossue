@@ -10,6 +10,7 @@ import {
 import { startAreaPicker, startCaptureMode, clearScreenshotPreview, highlightArea, clearHighlight } from "../hooks/useCapture";
 import { toggleRecording, clearRecordingPreview } from "../hooks/useRecording";
 import { formatSelectedElement } from "../utils/format";
+import { Button, Card } from "./ui";
 
 export function CaptureTools() {
   const state = useComputed(() => currentState.value);
@@ -29,17 +30,17 @@ export function CaptureTools() {
   };
 
   return (
-    <section class="card">
+    <Card>
       <div class="section-title-row">
         <h2>Captured Context</h2>
       </div>
       <div class="capture-tool-grid">
-        <section class="capture-tool-card">
+        <Card variant="nested">
           <div class="capture-tool-head">
             <h3>Select Area</h3>
-            <button id="selectArea" class="secondary" onClick={startAreaPicker}>
+            <Button id="selectArea" variant="secondary" onClick={startAreaPicker}>
               {selectAreaButtonText.value}
-            </button>
+            </Button>
           </div>
           <div
             id="areaSummary"
@@ -56,14 +57,14 @@ export function CaptureTools() {
               "No area selected."
             )}
           </div>
-        </section>
+        </Card>
 
-        <section class="capture-tool-card">
+        <Card variant="nested">
           <div class="capture-tool-head">
             <h3>Capture Image</h3>
-            <button id="captureScreenshot" class="secondary" onClick={startCaptureMode}>
+            <Button id="captureScreenshot" variant="secondary" onClick={startCaptureMode}>
               {captureButtonText.value}
-            </button>
+            </Button>
           </div>
           <div id="screenshotWrap" class={`preview-wrap ${hasScreenshot.value ? "" : "hidden"}`}>
             <button
@@ -82,14 +83,14 @@ export function CaptureTools() {
               src={state.value.screenshotDataUrl}
             />
           </div>
-        </section>
+        </Card>
 
-        <section class="capture-tool-card">
+        <Card variant="nested">
           <div class="capture-tool-head">
             <h3>Screen Recording</h3>
-            <button id="toggleRecording" class="secondary" onClick={toggleRecording}>
+            <Button id="toggleRecording" variant="secondary" onClick={toggleRecording}>
               {recordingButtonText.value}
-            </button>
+            </Button>
           </div>
           <div id="recordingWrap" class={`preview-wrap ${hasRecording.value ? "" : "hidden"}`}>
             <button
@@ -109,12 +110,12 @@ export function CaptureTools() {
               src={recording.value.objectUrl}
             />
           </div>
-        </section>
+        </Card>
       </div>
       <p id="captureStatus" class="status">
         {captureStatusMessage.value || "`Select Area` は DOM 要素選択、`Start Capture` は画面上の矩形キャプチャ、`Start Recording` は画面録画です。"}
       </p>
-    </section>
+    </Card>
   );
 }
 
