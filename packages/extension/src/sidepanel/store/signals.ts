@@ -4,8 +4,17 @@ import type {
   HelperState,
   RecordingState,
   IssueOptions,
+  DevtoolsStatus,
+  UserAction,
+  ConsoleEntry,
+  NetworkEntry,
 } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
+
+export type TimelineEntry =
+  | { kind: "action"; data: UserAction }
+  | { kind: "console"; data: ConsoleEntry & { id: string } }
+  | { kind: "network"; data: NetworkEntry & { id: string } };
 
 export const DEFAULT_LABEL_PRESETS = ["bug", "needs-triage", "diagnostics", "ui", "high-priority"];
 
@@ -102,3 +111,49 @@ export const pendingCaptureId = signal<number>(0);
 export const selectAreaButtonText = signal<string>("Select Area");
 export const captureButtonText = signal<string>("Start Capture");
 export const recordingButtonText = signal<string>("Start Recording");
+
+export const devtoolsStatus = signal<DevtoolsStatus>({
+  panelOpen: false,
+  debuggerAttached: false,
+});
+
+export const unifiedTimeline = computed<TimelineEntry[]>(() => {
+  const state = currentState.value;
+  const entries: TimelineEntry[] = [];
+
+  // Add actions
+  for (const action of state.actions || []) {
+    entries.push({ kind: "action", data: action });
+  }
+
+  // Add console entries with generated IDs
+  for (let i = 0; i < (state.consoleEntries || []).length; i++) {
+    const entry = state.consoleEntries[i];
+    entries.push({
+      kind: "console",
+      data: { ...entry, id: `console-${i}-${entry.at}` },
+    });
+  }
+
+  // Add network entries with generated IDs
+  for (let i = 0; i < (state.networkEntries || []).length; i++) {
+    const entry = state.networkEntries[i];
+    entries.push({
+      kind: "network",
+      data: { ...entry, id: `network-${i}-${entry.at}` },
+    });
+  }
+
+  // Sort by timestamp
+  entries.sort((a, b) => {
+    const timeA = new Date(a.data.at).getTime();
+    const timeB = new Date(b.data.at).getTime();
+    return timeA - timeB;
+  });
+
+  return entries;
+});
+
+export const hasTimelineEntries = computed(
+  () => unifiedTimeline.value.length > 0
+);

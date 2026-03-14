@@ -7,8 +7,19 @@ import {
 
 const tabId = chrome.devtools.inspectedWindow.tabId;
 
+function notifyDevtoolsStatus(panelOpen: boolean, debuggerAttached: boolean) {
+  chrome.runtime.sendMessage({
+    type: "DEVTOOLS_STATUS_UPDATE",
+    tabId,
+    payload: { panelOpen, debuggerAttached },
+  }).catch(() => {});
+}
+
 export function useDebugger() {
   useEffect(() => {
+    // Notify that DevTools panel is open
+    notifyDevtoolsStatus(true, false);
+
     const handleNetworkRequest = (
       request: chrome.devtools.network.Request
     ) => {
@@ -43,6 +54,8 @@ export function useDebugger() {
       chrome.devtools.network.onRequestFinished.removeListener(
         handleNetworkRequest
       );
+      // Notify that DevTools panel is closed
+      notifyDevtoolsStatus(false, false);
     };
   }, []);
 }
@@ -123,6 +136,7 @@ export async function attachDebugger() {
     await chrome.debugger.sendCommand({ tabId }, "Network.enable");
     chrome.debugger.onEvent.addListener(handleDebuggerEvent);
     setDebuggerAttached(true);
+    notifyDevtoolsStatus(true, true);
   } catch (error) {
     setDebuggerError(
       error instanceof Error ? error.message : "Failed to attach debugger"

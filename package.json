@@ -4,14 +4,17 @@
   "version": "0.1.0",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/demo-sites/*"
   ],
   "scripts": {
     "dev:extension": "npm run dev -w packages/extension",
     "build:extension": "npm run build -w packages/extension",
     "typecheck:extension": "npm run typecheck -w packages/extension",
     "dev:helper": "npm run tauri:dev -w packages/helper",
-    "build:helper": "npm run tauri:build -w packages/helper"
+    "build:helper": "npm run tauri:build -w packages/helper",
+    "dev:demo:nuxt": "npm run dev -w @tossue/demo-nuxt",
+    "dev:demo:next": "npm run dev -w @tossue/demo-next"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

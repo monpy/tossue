@@ -7,6 +7,7 @@ import type {
   Message,
   MessageResponse,
   DevtoolsEventPayload,
+  DevtoolsStatus,
 } from "../shared/types";
 
 const MAX_ACTIONS = 25;
@@ -18,6 +19,7 @@ const STORAGE_KEYS = {
 
 const tabState = new Map<number, TabState>();
 const screencastSessions = new Map<number, { attachedAt: number }>();
+const devtoolsStatus = new Map<number, DevtoolsStatus>();
 let nextActionId = 1;
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -78,10 +80,16 @@ async function handleMessage(
         actions.filter((action) => action.id !== (message.payload as { id: string })?.id)
       );
       return await respondWithState(tabId);
+    case "DELETE_TIMELINE_ENTRY":
+      deleteTimelineEntry(tabId, message.payload as { id: string; kind: string });
+      return await respondWithState(tabId);
     case "TRIM_ACTIONS_BEFORE":
       mutateActions(tabId, (actions) =>
         trimActionsBefore(actions, (message.payload as { id: string })?.id)
       );
+      return await respondWithState(tabId);
+    case "TRIM_TIMELINE_BEFORE":
+      trimTimelineBefore(tabId, message.payload as { id: string; kind: string; at: string });
       return await respondWithState(tabId);
     case "UNDO_ACTION_EDIT":
       undoActionEdit(tabId);
@@ -108,6 +116,11 @@ async function handleMessage(
     case "DEVTOOLS_EVENT":
       ingestDevtoolsEvent(tabId, message.payload as DevtoolsEventPayload);
       return await respondWithState(tabId);
+    case "DEVTOOLS_STATUS_UPDATE":
+      updateDevtoolsStatus(tabId, message.payload as Partial<DevtoolsStatus>);
+      return {};
+    case "GET_DEVTOOLS_STATUS":
+      return { devtoolsStatus: getDevtoolsStatus(tabId) };
     default:
       throw new Error(`Unsupported message type: ${message.type}`);
   }
@@ -273,6 +286,75 @@ function trimActionsBefore(actions: UserAction[], id: string | undefined): UserA
   }
 
   return actions.filter((_action, actionIndex) => actionIndex >= index);
+}
+
+function deleteTimelineEntry(
+  tabId: number | undefined,
+  payload: { id: string; kind: string } | undefined
+): void {
+  if (!tabId || !payload) return;
+  const { id, kind } = payload;
+  const current = getOrCreateState(tabId);
+
+  if (kind === "action") {
+    mutateActions(tabId, (actions) => actions.filter((a) => a.id !== id));
+    return;
+  }
+
+  if (kind === "console") {
+    // Parse the index from the generated ID (format: console-{index}-{at})
+    const match = id.match(/^console-(\d+)-/);
+    if (match) {
+      const index = parseInt(match[1], 10);
+      const entries = current.consoleEntries.filter((_, i) => i !== index);
+      tabState.set(tabId, { ...current, consoleEntries: entries });
+    }
+    return;
+  }
+
+  if (kind === "network") {
+    // Parse the index from the generated ID (format: network-{index}-{at})
+    const match = id.match(/^network-(\d+)-/);
+    if (match) {
+      const index = parseInt(match[1], 10);
+      const entries = current.networkEntries.filter((_, i) => i !== index);
+      tabState.set(tabId, { ...current, networkEntries: entries });
+    }
+    return;
+  }
+}
+
+function trimTimelineBefore(
+  tabId: number | undefined,
+  payload: { id: string; kind: string; at: string } | undefined
+): void {
+  if (!tabId || !payload) return;
+  const { at } = payload;
+  const cutoffTime = new Date(at).getTime();
+  const current = getOrCreateState(tabId);
+
+  // Remove all entries before the cutoff time
+  const actions = current.actions.filter(
+    (a) => new Date(a.at).getTime() >= cutoffTime
+  );
+  const consoleEntries = current.consoleEntries.filter(
+    (e) => new Date(e.at).getTime() >= cutoffTime
+  );
+  const networkEntries = current.networkEntries.filter(
+    (e) => new Date(e.at).getTime() >= cutoffTime
+  );
+
+  // Save to history for undo
+  const previousActions = current.actions.map(cloneAction);
+
+  tabState.set(tabId, {
+    ...current,
+    actions,
+    consoleEntries,
+    networkEntries,
+    actionHistoryPast: [...current.actionHistoryPast, previousActions].slice(-20),
+    actionHistoryFuture: [],
+  });
 }
 
 function ingestDevtoolsEvent(
@@ -525,4 +607,32 @@ async function persistDefaultRepo(repo: string | undefined): Promise<void> {
   await chrome.storage.local.set({
     [STORAGE_KEYS.defaultRepo]: String(repo || "").trim(),
   });
+}
+
+function getDevtoolsStatus(tabId: number | undefined): DevtoolsStatus {
+  if (!tabId) {
+    return { panelOpen: false, debuggerAttached: false };
+  }
+  return devtoolsStatus.get(tabId) || { panelOpen: false, debuggerAttached: false };
+}
+
+function updateDevtoolsStatus(
+  tabId: number | undefined,
+  patch: Partial<DevtoolsStatus>
+): void {
+  if (!tabId) return;
+  const current = getDevtoolsStatus(tabId);
+  const updated = { ...current, ...patch };
+  devtoolsStatus.set(tabId, updated);
+  broadcastDevtoolsStatus(tabId, updated);
+}
+
+function broadcastDevtoolsStatus(tabId: number, status: DevtoolsStatus): void {
+  chrome.runtime
+    .sendMessage({
+      type: "DEVTOOLS_STATUS_UPDATE",
+      tabId,
+      payload: status,
+    })
+    .catch(() => {});
 }

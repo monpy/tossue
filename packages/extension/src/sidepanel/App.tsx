@@ -1,7 +1,9 @@
 import { useTabState, refreshState } from "./hooks/useTabState";
 import { useRecording } from "./hooks/useRecording";
 import { useCapture } from "./hooks/useCapture";
+import { useDevtoolsStatus } from "./hooks/useDevtoolsStatus";
 import { HelperStatus } from "./components/HelperStatus";
+import { DevToolsStatus } from "./components/DevToolsStatus";
 import { ReportForm } from "./components/ReportForm";
 import { CaptureTools } from "./components/CaptureTools";
 import { ActionTimeline } from "./components/ActionTimeline";
@@ -12,6 +14,7 @@ export function App() {
   useTabState();
   useRecording();
   useCapture();
+  useDevtoolsStatus();
 
   return (
     <main class="app-shell">
@@ -27,6 +30,7 @@ export function App() {
 
       <section class="card grid">
         <HelperStatus />
+        <DevToolsStatus />
       </section>
 
       <ReportForm />

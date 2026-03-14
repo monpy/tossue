@@ -18,9 +18,26 @@ bootstrap();
 function bootstrap() {
   installMessageListener();
   installActionLogging();
-  installConsoleCapture();
-  installNetworkCapture();
+  installPageContextCapture();
   installUrlTracking();
+}
+
+function installPageContextCapture() {
+  // Inject script into page context to capture fetch/XHR/console
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("src/content/injected.js");
+  script.onload = () => script.remove();
+  (document.head || document.documentElement).appendChild(script);
+
+  // Listen for events from injected script
+  window.addEventListener("__tossue_capture__", ((event: CustomEvent) => {
+    const { type, payload } = event.detail;
+    if (type === "console") {
+      safeSendMessage({ type: "CONSOLE_EVENT", payload });
+    } else if (type === "network") {
+      safeSendMessage({ type: "NETWORK_EVENT", payload });
+    }
+  }) as EventListener);
 }
 
 function installMessageListener() {
@@ -128,81 +145,6 @@ function installUrlTracking() {
       }
     });
   }, 500);
-}
-
-function installConsoleCapture() {
-  const originalError = console.error.bind(console);
-  const originalWarn = console.warn.bind(console);
-
-  console.error = (...args) => {
-    reportConsole("error", args);
-    originalError(...args);
-  };
-
-  console.warn = (...args) => {
-    reportConsole("warn", args);
-    originalWarn(...args);
-  };
-
-  addEventListener("error", (event) => {
-    reportConsole("error", [event.message, event.filename, String(event.lineno)]);
-  });
-
-  addEventListener("unhandledrejection", (event) => {
-    reportConsole("error", ["Unhandled promise rejection", stringify(event.reason)]);
-  });
-}
-
-function installNetworkCapture() {
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = async (...args) => {
-    const startedAt = new Date().toISOString();
-    try {
-      const response = await originalFetch(...args);
-      if (!response.ok) {
-        reportNetwork({
-          method: resolveFetchMethod(args[1]),
-          url: String(args[0]),
-          status: response.status,
-          at: startedAt
-        });
-      }
-      return response;
-    } catch (error) {
-      reportNetwork({
-        method: resolveFetchMethod(args[1]),
-        url: String(args[0]),
-        status: 0,
-        at: startedAt,
-        error: stringify(error)
-      });
-      throw error;
-    }
-  };
-
-  const originalOpen = XMLHttpRequest.prototype.open;
-  const originalSend = XMLHttpRequest.prototype.send;
-
-  XMLHttpRequest.prototype.open = function patchedOpen(method, url, ...rest) {
-    this.__bugReporterMethod = method;
-    this.__bugReporterUrl = url;
-    return originalOpen.call(this, method, url, ...rest);
-  };
-
-  XMLHttpRequest.prototype.send = function patchedSend(...args) {
-    const startedAt = new Date().toISOString();
-    this.addEventListener("loadend", () => {
-      if (this.status >= 400 || this.status === 0) {
-        reportNetwork({
-          method: this.__bugReporterMethod || "GET",
-          url: this.__bugReporterUrl || location.href,
-          status: this.status,
-          at: startedAt
-        });
-      }
-    });
-    return originalSend.apply(this, args);
-  };
 }
 
 function startAreaPicker() {
@@ -945,29 +887,6 @@ function stringify(value) {
   } catch (_error) {
     return String(value);
   }
-}
-
-function reportConsole(level, args) {
-  safeSendMessage({
-    type: "CONSOLE_EVENT",
-    payload: {
-      level,
-      message: args.map((item) => stringify(item)).join(" "),
-      at: new Date().toISOString()
-    }
-  });
-}
-
-function reportNetwork(entry) {
-  safeSendMessage({ type: "NETWORK_EVENT", payload: entry });
-}
-
-function resolveFetchMethod(init) {
-  if (!init || typeof init !== "object") {
-    return "GET";
-  }
-
-  return init.method || "GET";
 }
 
 function safeSendMessage(message) {

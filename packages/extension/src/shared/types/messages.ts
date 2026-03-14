@@ -20,7 +20,9 @@ export type MessageType =
   | "ACTION_LOGGED"
   | "CLEAR_ACTIONS"
   | "DELETE_ACTION"
+  | "DELETE_TIMELINE_ENTRY"
   | "TRIM_ACTIONS_BEFORE"
+  | "TRIM_TIMELINE_BEFORE"
   | "UNDO_ACTION_EDIT"
   | "REDO_ACTION_EDIT"
   | "CONSOLE_EVENT"
@@ -32,7 +34,9 @@ export type MessageType =
   | "DEVTOOLS_EVENT"
   | "STATE_UPDATED"
   | "TAB_RECORDING_FRAME"
-  | "TAB_RECORDING_STOPPED";
+  | "TAB_RECORDING_STOPPED"
+  | "DEVTOOLS_STATUS_UPDATE"
+  | "GET_DEVTOOLS_STATUS";
 
 export type Message = {
   type: MessageType;
@@ -51,6 +55,11 @@ export type DevtoolsEventPayload = {
   entry: ConsoleEntry | NetworkEntry;
 };
 
+export type DevtoolsStatus = {
+  panelOpen: boolean;
+  debuggerAttached: boolean;
+};
+
 export type MessageResponse = {
   ok: boolean;
   error?: string;
@@ -61,4 +70,5 @@ export type MessageResponse = {
   highlighted?: boolean;
   cleared?: boolean;
   screenshotDataUrl?: string;
+  devtoolsStatus?: DevtoolsStatus;
 };
