@@ -43,7 +43,7 @@ export function ReportForm() {
 
       <Card>
         <div class="section-title-row">
-          <h2>Structured Report</h2>
+          <h2 class="text-base font-bold">Structured Report</h2>
         </div>
         <div class="grid">
           <label class="full">

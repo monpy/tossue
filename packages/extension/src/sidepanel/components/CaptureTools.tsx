@@ -32,12 +32,12 @@ export function CaptureTools() {
   return (
     <Card>
       <div class="section-title-row">
-        <h2>Captured Context</h2>
+        <h2 class="text-base font-bold">Captured Context</h2>
       </div>
       <div class="capture-tool-grid">
         <Card variant="nested">
           <div class="capture-tool-head">
-            <h3>Select Area</h3>
+            <h3 class="text-[13px] font-bold">Select Area</h3>
             <Button id="selectArea" variant="secondary" onClick={startAreaPicker}>
               {selectAreaButtonText.value}
             </Button>
@@ -61,7 +61,7 @@ export function CaptureTools() {
 
         <Card variant="nested">
           <div class="capture-tool-head">
-            <h3>Capture Image</h3>
+            <h3 class="text-[13px] font-bold">Capture Image</h3>
             <Button id="captureScreenshot" variant="secondary" onClick={startCaptureMode}>
               {captureButtonText.value}
             </Button>
@@ -87,7 +87,7 @@ export function CaptureTools() {
 
         <Card variant="nested">
           <div class="capture-tool-head">
-            <h3>Screen Recording</h3>
+            <h3 class="text-[13px] font-bold">Screen Recording</h3>
             <Button id="toggleRecording" variant="secondary" onClick={toggleRecording}>
               {recordingButtonText.value}
             </Button>

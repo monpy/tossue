@@ -91,7 +91,7 @@ export function IssueCreator() {
   return (
     <Card>
       <div class="section-title-row">
-        <h2>Create GitHub Issue</h2>
+        <h2 class="text-base font-bold">Create GitHub Issue</h2>
         <Button
           id="createIssue"
           disabled={!canCreateIssue.value}

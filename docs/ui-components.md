@@ -92,13 +92,13 @@ interface ButtonProps {
 
 | バリアント | 用途 | UnoCSS クラス |
 |-----------|------|---------------|
-| `default` | セクションコンテナ | `bg-surface/92 rounded-[14px] shadow-[0_8px_30px_rgba(62,42,18,0.06)]` |
-| `nested` | カード内のサブセクション | `bg-surface-strong/68 rounded-xl shadow-none` |
+| `default` | セクションコンテナ | `p-3 bg-surface/92 rounded-[14px] shadow-[0_8px_30px_rgba(62,42,18,0.06)]` |
+| `nested` | カード内のサブセクション | `p-2.5 bg-surface-strong/68 rounded-xl shadow-none` |
 
 ### 共通スタイル
 
 ```
-grid gap-3 p-3.5 border border-border
+grid gap-2.5 border border-border
 ```
 
 ### Props
