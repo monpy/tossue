@@ -20,6 +20,7 @@ import {
 } from "../hooks/useActions";
 import { highlightArea, clearHighlight } from "../hooks/useCapture";
 import { formatActionIndex, formatActionTitle, formatActionDetail } from "../utils/format";
+import { Button, Card } from "./ui";
 
 export function ActionTimeline() {
   const timeline = useComputed(() => unifiedTimeline.value);
@@ -53,7 +54,7 @@ export function ActionTimeline() {
   };
 
   return (
-    <section class="card">
+    <Card>
       <div class="section-title-row">
         <h2>Timeline</h2>
         <div class="button-row">
@@ -66,36 +67,36 @@ export function ActionTimeline() {
             />
             <span>Use in issue</span>
           </label>
-          <button
+          <Button
             id="undoActions"
-            class="secondary icon-only"
-            type="button"
+            variant="secondary"
+            iconOnly
             aria-label="Undo"
             disabled={!canUndo.value}
             onClick={undoActions}
           >
             ←
-          </button>
-          <button
+          </Button>
+          <Button
             id="redoActions"
-            class="secondary icon-only"
-            type="button"
+            variant="secondary"
+            iconOnly
             aria-label="Redo"
             disabled={!canRedo.value}
             onClick={redoActions}
           >
             →
-          </button>
-          <button
+          </Button>
+          <Button
             id="clearActions"
-            class="secondary icon-only"
-            type="button"
+            variant="secondary"
+            iconOnly
             aria-label="Clear all"
             disabled={!hasTimelineEntries.value}
             onClick={clearActions}
           >
             ⊘
-          </button>
+          </Button>
         </div>
       </div>
       <div
@@ -117,7 +118,7 @@ export function ActionTimeline() {
           />
         ))}
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -223,15 +224,15 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
           <strong class="action-row-title">{label}</strong>
           {detail && <span class="action-row-detail">{detail}</span>}
         </div>
-        <button
-          class="action-icon-button"
-          type="button"
-          data-action-command="delete"
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
           aria-label="Delete action"
           onClick={() => onDelete(action.id)}
         >
           ×
-        </button>
+        </Button>
       </article>
     </>
   );
@@ -270,15 +271,15 @@ function ConsoleRow({ entry, index, onDelete, onTrimBefore }: ConsoleRowProps) {
           </strong>
           <span class="action-row-detail">{entry.message.slice(0, 100)}</span>
         </div>
-        <button
-          class="action-icon-button"
-          type="button"
-          data-action-command="delete"
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
           aria-label="Delete entry"
           onClick={() => onDelete(entry.id)}
         >
           ×
-        </button>
+        </Button>
       </article>
     </>
   );
@@ -326,15 +327,15 @@ function NetworkRow({ entry, index, onDelete, onTrimBefore }: NetworkRowProps) {
           </strong>
           <span class="action-row-detail">{displayUrl.slice(0, 80)}</span>
         </div>
-        <button
-          class="action-icon-button"
-          type="button"
-          data-action-command="delete"
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
           aria-label="Delete entry"
           onClick={() => onDelete(entry.id)}
         >
           ×
-        </button>
+        </Button>
       </article>
     </>
   );

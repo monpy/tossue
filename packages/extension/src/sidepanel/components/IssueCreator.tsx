@@ -12,6 +12,7 @@ import {
 import { createIssueViaHelper } from "../hooks/useHelper";
 import { sanitizeFilename } from "../utils/format";
 import { blobUrlToDataUrl } from "../utils/image";
+import { Button, Card } from "./ui";
 
 export function IssueCreator() {
   const helper = useComputed(() => currentHelper.value);
@@ -88,16 +89,16 @@ export function IssueCreator() {
   };
 
   return (
-    <section class="card">
+    <Card>
       <div class="section-title-row">
         <h2>Create GitHub Issue</h2>
-        <button
+        <Button
           id="createIssue"
           disabled={!canCreateIssue.value}
           onClick={handleCreateIssue}
         >
           Create Issue
-        </button>
+        </Button>
       </div>
       <p id="createIssueHint" class="status">
         {getHintText()}
@@ -105,7 +106,7 @@ export function IssueCreator() {
       <p id="submitStatus" class="status">
         {status.value}
       </p>
-    </section>
+    </Card>
   );
 }
 

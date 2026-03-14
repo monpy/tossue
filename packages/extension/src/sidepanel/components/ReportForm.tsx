@@ -1,6 +1,7 @@
 import { useComputed } from "@preact/signals";
 import { currentState, currentHelper, selectedLabels } from "../store/signals";
 import { persistDraft } from "../hooks/useTabState";
+import { Card } from "./ui";
 import { LabelSelector } from "./LabelSelector";
 
 export function ReportForm() {
@@ -22,7 +23,7 @@ export function ReportForm() {
 
   return (
     <>
-      <section class="card grid">
+      <Card class="grid">
         <label>
           <span>GitHub Repository</span>
           <input
@@ -38,9 +39,9 @@ export function ReportForm() {
             ))}
           </datalist>
         </label>
-      </section>
+      </Card>
 
-      <section class="card">
+      <Card>
         <div class="section-title-row">
           <h2>Structured Report</h2>
         </div>
@@ -74,7 +75,7 @@ export function ReportForm() {
           </label>
           <LabelSelector />
         </div>
-      </section>
+      </Card>
     </>
   );
 }
