@@ -28,3 +28,8 @@ npm-debug.log*
 
 # Tauri
 helper/src-tauri/target/
+
+# Claude Code
+.claude/
+!.claude/commands/
+.plans/
