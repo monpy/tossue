@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Default capabilities for Tossue Helper","local":true,"windows":["main"],"permissions":["core:default","core:tray:default"]}}

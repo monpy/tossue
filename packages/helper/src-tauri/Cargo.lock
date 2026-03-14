@@ -254,20 +254,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bugsignal-helper"
-version = "0.1.0"
-dependencies = [
- "axum",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-utils",
- "tokio",
- "tower-http 0.5.2",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3751,6 +3737,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "702d4415e08923e7e1ef96cd5727c0dfed80b4d2fa25db9647fe5eb6f7c5a4c4"
 dependencies = [
  "winnow 0.7.15",
+]
+
+[[package]]
+name = "tossue-helper"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-utils",
+ "tokio",
+ "tower-http 0.5.2",
 ]
 
 [[package]]
