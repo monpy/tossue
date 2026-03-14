@@ -15,8 +15,11 @@ This is a monorepo managed with npm workspaces.
 
 ```
 packages/
-├── extension/   # Chrome extension (Manifest V3)
-└── helper/      # Tauri-based local helper app for gh integration
+├── extension/     # Chrome extension (Manifest V3)
+├── helper/        # Tauri-based local helper app for gh integration
+└── demo-sites/    # Demo sites for testing
+    ├── nuxt/      # Nuxt 3 (Vue 3) demo - port 3000
+    └── next/      # Next.js 15 (React 19) demo - port 3001
 ```
 
 ## Prerequisites
@@ -69,6 +72,8 @@ npm run build:helper
 | `npm run typecheck:extension` | Run TypeScript type checking |
 | `npm run dev:helper` | Start helper app in dev mode |
 | `npm run build:helper` | Build helper app for production |
+| `npm run dev:demo:nuxt` | Start Nuxt demo site (port 3000) |
+| `npm run dev:demo:next` | Start Next.js demo site (port 3001) |
 
 ## Debugging
 
@@ -89,3 +94,23 @@ npm run dev:extension
 ```
 
 Changes to sidepanel and devtools panel will auto-reload. Note that content scripts and background service worker changes require a manual extension reload.
+
+## Demo Sites
+
+DevTools Bridge 機能をテストするためのデモサイトが用意されています。
+
+```bash
+# Nuxt 3 デモサイト (Vue 3)
+npm run dev:demo:nuxt   # http://localhost:3000
+
+# Next.js デモサイト (React 19)
+npm run dev:demo:next   # http://localhost:3001
+```
+
+デモサイトでは以下をテストできます：
+- **Network Errors**: 500/404 エラーのシミュレート
+- **Console Errors**: console.error/warn のキャプチャ
+- **Runtime Exceptions**: 未キャッチ例外のキャプチャ
+- **Component Tracking**: Vue/React コンポーネントの検出
+
+詳細は [packages/demo-sites/README.md](packages/demo-sites/README.md) を参照してください。
