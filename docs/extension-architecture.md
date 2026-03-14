@@ -11,7 +11,7 @@ Chrome 拡張機能の技術アーキテクチャを定義する。
 | Extension Plugin | @crxjs/vite-plugin | ^2.0.0-beta |
 | UI Framework | Preact | ^10.0 |
 | State Management | @preact/signals | ^1.0 |
-| CSS | CSS Modules | - |
+| CSS | UnoCSS (preset-wind4) | ^66.0 |
 
 ### Why Preact over React
 
@@ -223,4 +223,4 @@ npm run typecheck
 
 - Content Script は DOM 操作が中心のため、Preact 化の優先度は低い
 - Background Service Worker は状態管理のみのため、TypeScript 化のみで十分
-- CSS Modules は sidepanel / devtools-panel のみに適用
+- UnoCSS は sidepanel / devtools-panel で使用（詳細は [styling-guide.md](./styling-guide.md) を参照）

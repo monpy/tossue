@@ -1,11 +1,13 @@
 import { resolve } from "path";
 import { defineConfig } from "vite";
+import UnoCSS from "unocss/vite";
 import preact from "@preact/preset-vite";
 import { crx } from "@crxjs/vite-plugin";
 import manifest from "./manifest.json";
 
 export default defineConfig({
   plugins: [
+    UnoCSS(),
     preact(),
     crx({ manifest }),
   ],
