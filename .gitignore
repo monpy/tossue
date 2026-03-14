@@ -5,6 +5,7 @@ node_modules/
 target/
 dist/
 build/
+.vite/
 
 # OS files
 .DS_Store
