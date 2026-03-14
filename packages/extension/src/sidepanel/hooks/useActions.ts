@@ -13,7 +13,8 @@ export function useActions() {
     undoActions,
     redoActions,
     deleteAction,
-    trimActionsBefore,
+    deleteTimelineEntry,
+    trimTimelineBefore,
     handleIssueOptionsChange,
   };
 }
@@ -34,8 +35,12 @@ export async function deleteAction(id: string): Promise<void> {
   await mutateActionTimeline("DELETE_ACTION", { id });
 }
 
-export async function trimActionsBefore(id: string): Promise<void> {
-  await mutateActionTimeline("TRIM_ACTIONS_BEFORE", { id });
+export async function deleteTimelineEntry(id: string, kind: string): Promise<void> {
+  await mutateActionTimeline("DELETE_TIMELINE_ENTRY", { id, kind });
+}
+
+export async function trimTimelineBefore(id: string, kind: string, at: string): Promise<void> {
+  await mutateActionTimeline("TRIM_TIMELINE_BEFORE", { id, kind, at });
 }
 
 async function mutateActionTimeline(type: string, payload?: unknown): Promise<void> {

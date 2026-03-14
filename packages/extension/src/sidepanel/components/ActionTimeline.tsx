@@ -14,7 +14,8 @@ import {
   undoActions,
   redoActions,
   deleteAction,
-  trimActionsBefore,
+  deleteTimelineEntry,
+  trimTimelineBefore,
   handleIssueOptionsChange,
 } from "../hooks/useActions";
 import { highlightArea, clearHighlight } from "../hooks/useCapture";
@@ -110,8 +111,9 @@ export function ActionTimeline() {
             index={index}
             onActionHover={handleActionHover}
             onActionLeave={handleActionLeave}
-            onDelete={deleteAction}
-            onTrimBefore={trimActionsBefore}
+            onDeleteAction={deleteAction}
+            onDeleteEntry={deleteTimelineEntry}
+            onTrimTimelineBefore={trimTimelineBefore}
           />
         ))}
       </div>
@@ -128,8 +130,9 @@ type TimelineRowProps = {
   index: number;
   onActionHover: (action: UserAction) => void;
   onActionLeave: () => void;
-  onDelete: (id: string) => void;
-  onTrimBefore: (id: string) => void;
+  onDeleteAction: (id: string) => void;
+  onDeleteEntry: (id: string, kind: string) => void;
+  onTrimTimelineBefore: (id: string, kind: string, at: string) => void;
 };
 
 function TimelineRow({
@@ -137,8 +140,9 @@ function TimelineRow({
   index,
   onActionHover,
   onActionLeave,
-  onDelete,
-  onTrimBefore,
+  onDeleteAction,
+  onDeleteEntry,
+  onTrimTimelineBefore,
 }: TimelineRowProps) {
   if (entry.kind === "action") {
     return (
@@ -147,18 +151,32 @@ function TimelineRow({
         index={index}
         onHover={onActionHover}
         onLeave={onActionLeave}
-        onDelete={onDelete}
-        onTrimBefore={onTrimBefore}
+        onDelete={onDeleteAction}
+        onTrimBefore={(id, at) => onTrimTimelineBefore(id, "action", at)}
       />
     );
   }
 
   if (entry.kind === "console") {
-    return <ConsoleRow entry={entry.data} index={index} />;
+    return (
+      <ConsoleRow
+        entry={entry.data}
+        index={index}
+        onDelete={(id) => onDeleteEntry(id, "console")}
+        onTrimBefore={(id, at) => onTrimTimelineBefore(id, "console", at)}
+      />
+    );
   }
 
   if (entry.kind === "network") {
-    return <NetworkRow entry={entry.data} index={index} />;
+    return (
+      <NetworkRow
+        entry={entry.data}
+        index={index}
+        onDelete={(id) => onDeleteEntry(id, "network")}
+        onTrimBefore={(id, at) => onTrimTimelineBefore(id, "network", at)}
+      />
+    );
   }
 
   return null;
@@ -170,7 +188,7 @@ type ActionRowProps = {
   onHover: (action: UserAction) => void;
   onLeave: () => void;
   onDelete: (id: string) => void;
-  onTrimBefore: (id: string) => void;
+  onTrimBefore: (id: string, at: string) => void;
 };
 
 function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: ActionRowProps) {
@@ -184,8 +202,8 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
           type="button"
           class="action-cutline"
           data-action-command="trim-before"
-          aria-label="Delete actions above this line"
-          onClick={() => onTrimBefore(action.id)}
+          aria-label="Delete entries above this line"
+          onClick={() => onTrimBefore(action.id, action.at)}
         >
           <span class="action-cutline-icon">✂</span>
           <span class="action-cutline-rule"></span>
@@ -222,31 +240,58 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
 type ConsoleRowProps = {
   entry: ConsoleEntry & { id: string };
   index: number;
+  onDelete: (id: string) => void;
+  onTrimBefore: (id: string, at: string) => void;
 };
 
-function ConsoleRow({ entry, index }: ConsoleRowProps) {
+function ConsoleRow({ entry, index, onDelete, onTrimBefore }: ConsoleRowProps) {
   const levelClass = entry.level === "error" ? "timeline-error" : "timeline-warn";
   const levelIcon = entry.level === "error" ? "⚠" : "⚡";
 
   return (
-    <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
-      <span class="action-row-index">{formatActionIndex(index + 1)}</span>
-      <div class="action-row-copy">
-        <strong class="action-row-title">
-          {levelIcon} console.{entry.level}
-        </strong>
-        <span class="action-row-detail">{entry.message.slice(0, 100)}</span>
-      </div>
-    </article>
+    <>
+      {index > 0 && (
+        <button
+          type="button"
+          class="action-cutline"
+          data-action-command="trim-before"
+          aria-label="Delete entries above this line"
+          onClick={() => onTrimBefore(entry.id, entry.at)}
+        >
+          <span class="action-cutline-icon">✂</span>
+          <span class="action-cutline-rule"></span>
+        </button>
+      )}
+      <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
+        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
+        <div class="action-row-copy">
+          <strong class="action-row-title">
+            {levelIcon} console.{entry.level}
+          </strong>
+          <span class="action-row-detail">{entry.message.slice(0, 100)}</span>
+        </div>
+        <button
+          class="action-icon-button"
+          type="button"
+          data-action-command="delete"
+          aria-label="Delete entry"
+          onClick={() => onDelete(entry.id)}
+        >
+          ×
+        </button>
+      </article>
+    </>
   );
 }
 
 type NetworkRowProps = {
   entry: NetworkEntry & { id: string };
   index: number;
+  onDelete: (id: string) => void;
+  onTrimBefore: (id: string, at: string) => void;
 };
 
-function NetworkRow({ entry, index }: NetworkRowProps) {
+function NetworkRow({ entry, index, onDelete, onTrimBefore }: NetworkRowProps) {
   const statusText = entry.status === 0 ? "ERR" : entry.status.toString();
   const levelClass = entry.status >= 500 ? "timeline-error" : "timeline-warn";
 
@@ -260,14 +305,37 @@ function NetworkRow({ entry, index }: NetworkRowProps) {
   }
 
   return (
-    <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
-      <span class="action-row-index">{formatActionIndex(index + 1)}</span>
-      <div class="action-row-copy">
-        <strong class="action-row-title">
-          🌐 {entry.method} {statusText}
-        </strong>
-        <span class="action-row-detail">{displayUrl.slice(0, 80)}</span>
-      </div>
-    </article>
+    <>
+      {index > 0 && (
+        <button
+          type="button"
+          class="action-cutline"
+          data-action-command="trim-before"
+          aria-label="Delete entries above this line"
+          onClick={() => onTrimBefore(entry.id, entry.at)}
+        >
+          <span class="action-cutline-icon">✂</span>
+          <span class="action-cutline-rule"></span>
+        </button>
+      )}
+      <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
+        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
+        <div class="action-row-copy">
+          <strong class="action-row-title">
+            🌐 {entry.method} {statusText}
+          </strong>
+          <span class="action-row-detail">{displayUrl.slice(0, 80)}</span>
+        </div>
+        <button
+          class="action-icon-button"
+          type="button"
+          data-action-command="delete"
+          aria-label="Delete entry"
+          onClick={() => onDelete(entry.id)}
+        >
+          ×
+        </button>
+      </article>
+    </>
   );
 }

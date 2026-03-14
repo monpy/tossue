@@ -15,6 +15,15 @@ export default defineConfig({
     rollupOptions: {
       input: {
         devtoolsPanel: resolve(__dirname, "src/devtools/panel/index.html"),
+        injected: resolve(__dirname, "src/content/injected.ts"),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === "injected") {
+            return "src/content/injected.js";
+          }
+          return "[name]-[hash].js";
+        },
       },
     },
   },
