@@ -660,8 +660,8 @@ function extractElementLabel(element) {
     return aria.slice(0, 80);
   }
 
-  const ownText = Array.from(element.childNodes)
-    .filter((node) => node.nodeType === Node.TEXT_NODE)
+  const ownText = Array.from(element.childNodes as NodeListOf<ChildNode>)
+    .filter((node): node is ChildNode => node.nodeType === Node.TEXT_NODE)
     .map((node) => normalizeWhitespace(node.textContent || ""))
     .filter(Boolean)
     .join(" ");
@@ -819,7 +819,7 @@ function describeDomNode(element) {
   }
 
   const tag = element.tagName.toLowerCase();
-  const classes = Array.from(element.classList).filter((name) => !/^active|selected|open|show$/.test(name)).slice(0, 2);
+  const classes = Array.from(element.classList).filter((name: string) => !/^active|selected|open|show$/.test(name)).slice(0, 2);
   if (classes.length) {
     return `${tag}.${classes.join(".")}`;
   }
@@ -868,12 +868,12 @@ function buildSelector(element) {
     }
 
     if (current.classList.length) {
-      part += `.${Array.from(current.classList).slice(0, 2).map((item) => CSS.escape(item)).join(".")}`;
+      part += `.${Array.from(current.classList).slice(0, 2).map((item: string) => CSS.escape(item)).join(".")}`;
     }
 
     const parent = current.parentElement;
     if (parent) {
-      const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
+      const siblings = Array.from(parent.children).filter((child: Element) => child.tagName === current.tagName);
       if (siblings.length > 1) {
         const index = siblings.indexOf(current) + 1;
         part += `:nth-of-type(${index})`;
@@ -899,8 +899,8 @@ function buildXPath(element) {
       break;
     }
 
-    const siblings = Array.from(parent.children).filter((child) => child.tagName === current.tagName);
-    const index = siblings.indexOf(current) + 1;
+    const siblings = Array.from((parent as Element).children).filter((child: Element) => child.tagName === current.tagName);
+    const index = siblings.indexOf(current as Element) + 1;
     segments.unshift(`/${tagName}[${index}]`);
     current = parent;
   }
