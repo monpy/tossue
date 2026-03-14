@@ -11,7 +11,7 @@ export function MarkdownPreview() {
   return (
     <Card>
       <div class="section-title-row">
-        <h2>Markdown Preview</h2>
+        <h2 class="text-base font-bold">Markdown Preview</h2>
         <div class="button-row">
           <Button id="copyMarkdown" variant="secondary" onClick={handleCopy}>
             Copy

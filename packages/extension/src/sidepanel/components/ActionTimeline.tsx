@@ -56,7 +56,7 @@ export function ActionTimeline() {
   return (
     <Card>
       <div class="section-title-row">
-        <h2>Timeline</h2>
+        <h2 class="text-base font-bold">Timeline</h2>
         <div class="button-row">
           <label class="inline-switch">
             <input

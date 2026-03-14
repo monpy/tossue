@@ -9,8 +9,8 @@ export interface CardProps {
 
 const variantClasses = {
   default:
-    "p-3.5 bg-surface/92 rounded-[14px] shadow-[0_8px_30px_rgba(62,42,18,0.06)]",
-  nested: "p-3 bg-surface-strong/68 rounded-xl",
+    "p-3 bg-surface/92 rounded-[14px] shadow-[0_8px_30px_rgba(62,42,18,0.06)]",
+  nested: "p-2.5 bg-surface-strong/68 rounded-xl",
 } as const;
 
 export function Card({
@@ -18,7 +18,7 @@ export function Card({
   children,
   class: className,
 }: CardProps): JSX.Element {
-  const baseClasses = "grid gap-3 border border-border";
+  const baseClasses = "grid gap-2.5 border border-border";
   const variantClass = variantClasses[variant];
 
   const classes = cn(baseClasses, variantClass, className);
