@@ -1,4 +1,5 @@
 import type { ComponentChildren, JSX } from "preact";
+import { cn } from "../../utils/cn";
 
 export interface CardProps {
   variant?: "default" | "nested";
@@ -20,9 +21,7 @@ export function Card({
   const baseClasses = "grid gap-3 border border-border";
   const variantClass = variantClasses[variant];
 
-  const classes = [baseClasses, variantClass, className]
-    .filter(Boolean)
-    .join(" ");
+  const classes = cn(baseClasses, variantClass, className);
 
   return <section class={classes}>{children}</section>;
 }

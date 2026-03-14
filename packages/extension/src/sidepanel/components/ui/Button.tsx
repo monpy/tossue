@@ -1,4 +1,5 @@
 import type { ComponentChildren, JSX } from "preact";
+import { cn } from "../../utils/cn";
 
 export interface ButtonProps {
   variant?: "primary" | "secondary" | "ghost";
@@ -46,9 +47,7 @@ export function Button({
   const variantClass = variantClasses[variant];
   const sizeClass = iconOnly ? iconSizeClasses[size] : sizeClasses[size];
 
-  const classes = [baseClasses, variantClass, sizeClass, className]
-    .filter(Boolean)
-    .join(" ");
+  const classes = cn(baseClasses, variantClass, sizeClass, className);
 
   return (
     <button
