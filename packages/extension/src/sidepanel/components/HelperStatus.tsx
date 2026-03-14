@@ -1,4 +1,4 @@
-import { currentHelper, statusMessage } from "../store/signals";
+import { currentHelper } from "../store/signals";
 import { refreshHelperState, startHelperLogin } from "../hooks/useHelper";
 
 export function HelperStatus() {
@@ -53,28 +53,35 @@ export function HelperStatus() {
   const showLoginButton = helper.reachable && helper.github?.gh_installed && !helper.github?.authenticated;
 
   return (
-    <details class="helper-section">
-      <summary id="helperSummary">
-        <span class={getStatusDotClass()} id="helperSummaryDot"></span>
-        <span id="helperSummaryText">{getStatusText()}</span>
-        {getSummaryText()}
+    <details class="full helper-details">
+      <summary class="helper-summary-toggle">
+        <span class="helper-summary-label">Local Helper</span>
+        <span class="helper-summary-state">
+          <span class={getStatusDotClass()} id="helperSummaryDot"></span>
+          <span class="helper-summary-text" id="helperSummaryText">{getStatusText()}</span>
+        </span>
       </summary>
-      <div class="helper-detail">
-        <p id="helperDetail">{getDetailText()}</p>
-        <div class="helper-meta">
-          <span id="helperEndpoint">{endpointText}</span>
-          <span class={getStatusDotClass()} id="helperDot"></span>
+      <div class="auth-toolbar">
+        <div class="helper-status-stack">
+          <div class="helper-status-line">
+            <span class={getStatusDotClass()} id="helperDot"></span>
+            <p class="helper-heading" id="helperSummary">{getSummaryText()}</p>
+          </div>
+          <p class="status" id="helperDetail">{getDetailText()}</p>
+          <div class="helper-meta">
+            <span class="helper-chip" id="helperEndpoint">{endpointText}</span>
+            <span class="helper-chip" id="helperAccount">{getAccountText()}</span>
+          </div>
         </div>
-        <p id="helperAccount">{getAccountText()}</p>
-        <div class="helper-actions">
-          <button type="button" id="refreshHelper" onClick={refreshHelperState}>
-            Refresh Helper
-          </button>
+        <div class="button-row">
           {showLoginButton && (
-            <button type="button" id="loginHelper" onClick={startHelperLogin}>
+            <button class="secondary" id="loginHelper" onClick={startHelperLogin}>
               Login via Helper
             </button>
           )}
+          <button class="secondary" id="refreshHelper" onClick={refreshHelperState}>
+            Refresh Helper
+          </button>
         </div>
       </div>
     </details>

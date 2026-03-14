@@ -5,8 +5,9 @@ import type {
   RecordingState,
   IssueOptions,
 } from "../../shared/types";
+import { buildMarkdown } from "../utils/markdown";
 
-const DEFAULT_LABEL_PRESETS = ["bug", "needs-triage", "diagnostics", "ui", "high-priority"];
+export const DEFAULT_LABEL_PRESETS = ["bug", "needs-triage", "diagnostics", "ui", "high-priority"];
 
 function createEmptyState(): TabState {
   return {
@@ -71,3 +72,33 @@ export const canCreateIssue = computed(() =>
 export const issueTitle = computed(() =>
   currentState.value.draft.summary.split("\n")[0].trim().slice(0, 80) || "Bug report"
 );
+
+export const isRecording = computed(() =>
+  recordingState.value.recorder !== null && recordingState.value.recorder.state !== "inactive"
+);
+
+export const hasRecording = computed(() =>
+  recordingState.value.objectUrl !== ""
+);
+
+export const hasScreenshot = computed(() =>
+  currentState.value.screenshotDataUrl !== ""
+);
+
+export const markdown = computed(() =>
+  buildMarkdown({
+    state: currentState.value,
+    draft: {
+      ...currentState.value.draft,
+      labels: Array.from(selectedLabels.value),
+    },
+    issueOptions: issueOptions.value,
+    hasRecording: hasRecording.value,
+  })
+);
+
+export const pendingCaptureId = signal<number>(0);
+
+export const selectAreaButtonText = signal<string>("Select Area");
+export const captureButtonText = signal<string>("Start Capture");
+export const recordingButtonText = signal<string>("Start Recording");

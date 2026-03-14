@@ -1,8 +1,6 @@
 import { useState } from "preact/hooks";
-import { labelPresets, selectedLabels } from "../store/signals";
+import { labelPresets, selectedLabels, DEFAULT_LABEL_PRESETS } from "../store/signals";
 import { persistDraft, saveLabelPresets } from "../hooks/useTabState";
-
-const DEFAULT_LABEL_PRESETS = ["bug", "needs-triage", "diagnostics", "ui", "high-priority"];
 
 export function LabelSelector() {
   const [customInput, setCustomInput] = useState("");
@@ -56,52 +54,50 @@ export function LabelSelector() {
   };
 
   return (
-    <fieldset class="label-fieldset">
-      <legend>Labels</legend>
-      <ul class="label-preset-list" id="labelPresetList">
+    <div class="full label-editor">
+      <span>Labels</span>
+      <div class="label-chip-list" id="labelPresetList">
         {labelPresets.value.map((label) => {
           const isSelected = selectedLabels.value.has(label);
           const isCustom = !DEFAULT_LABEL_PRESETS.includes(label);
           return (
-            <li key={label}>
-              <button
-                type="button"
-                class={`label-chip${isSelected ? " active" : ""}${isCustom ? " custom" : ""}`}
-                title={label}
-                onClick={() => toggleLabel(label)}
-              >
-                <span>{label}</span>
-                {isCustom && (
-                  <button
-                    type="button"
-                    class="label-chip-remove"
-                    title={`Remove ${label}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeCustomLabel(label);
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-              </button>
-            </li>
+            <button
+              key={label}
+              type="button"
+              class={`label-chip${isSelected ? " active" : ""}${isCustom ? " custom" : ""}`}
+              title={label}
+              onClick={() => toggleLabel(label)}
+            >
+              <span>{label}</span>
+              {isCustom && (
+                <button
+                  type="button"
+                  class="label-chip-remove"
+                  title={`Remove ${label}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeCustomLabel(label);
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </button>
           );
         })}
-      </ul>
-      <div class="label-custom-row">
+      </div>
+      <div class="label-add-row">
         <input
-          type="text"
           id="customLabelInput"
-          placeholder="Add custom label"
+          placeholder="custom label"
           value={customInput}
           onInput={(e) => setCustomInput((e.target as HTMLInputElement).value)}
           onKeyDown={handleKeyDown}
         />
-        <button type="button" id="addCustomLabel" onClick={addCustomLabel}>
-          Add
+        <button class="secondary" type="button" id="addCustomLabel" onClick={addCustomLabel}>
+          Add Label
         </button>
       </div>
-    </fieldset>
+    </div>
   );
 }
