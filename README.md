@@ -1,22 +1,91 @@
 # Tossue
 
-Tossue is a browser extension prototype for collecting structured bug context and turning it into GitHub issues that humans and AI can both work with.
+Tossue is a browser extension for collecting structured bug context and turning it into GitHub issues that humans and AI can both work with.
 
 ## Docs
 
 - [Product overview](docs/product-overview.md)
+- [Extension architecture](docs/extension-architecture.md)
 - [Manual testing guide](docs/manual-testing.md)
+- [Contributing guide](docs/contributing.md)
 
 ## Repository Layout
 
-- `extension/`: Manifest V3 extension prototype
-- `helper/`: Tauri-based local helper app for `gh` integration
-- `docs/`: product background, scope, and testing notes
+This is a monorepo managed with npm workspaces.
+
+```
+packages/
+├── extension/   # Chrome extension (Manifest V3)
+└── helper/      # Tauri-based local helper app for gh integration
+```
+
+## Prerequisites
+
+- Node.js 18+
+- npm 9+
+- Rust (for helper app)
 
 ## Quick Start
 
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Extension Development
+
+```bash
+# Build the extension
+npm run build:extension
+
+# Or with HMR (Hot Module Replacement)
+npm run dev:extension
+```
+
+Then load the extension in Chrome:
+
 1. Open `chrome://extensions`
-2. Enable Developer mode
-3. Click `Load unpacked`
-4. Select the `extension` folder
-5. Start the helper app in `helper/` if you want direct GitHub issue creation
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select `packages/extension/dist`
+
+### Helper App Development
+
+```bash
+# Run the helper app in development mode
+npm run dev:helper
+
+# Build for production
+npm run build:helper
+```
+
+## Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev:extension` | Start extension dev server with HMR |
+| `npm run build:extension` | Build extension for production |
+| `npm run typecheck:extension` | Run TypeScript type checking |
+| `npm run dev:helper` | Start helper app in dev mode |
+| `npm run build:helper` | Build helper app for production |
+
+## Debugging
+
+### Extension
+
+1. Build the extension: `npm run build:extension`
+2. Load `packages/extension/dist` in Chrome
+3. Open DevTools on the side panel or any page
+4. Check the Console for errors
+5. Use `chrome://extensions` to inspect the service worker
+
+### HMR Development
+
+For faster development with hot reload:
+
+```bash
+npm run dev:extension
+```
+
+Changes to sidepanel and devtools panel will auto-reload. Note that content scripts and background service worker changes require a manual extension reload.
