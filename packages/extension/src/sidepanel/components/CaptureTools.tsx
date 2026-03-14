@@ -1,3 +1,4 @@
+import { useComputed } from "@preact/signals";
 import {
   currentState,
   recordingState,
@@ -8,18 +9,18 @@ import {
 } from "../store/signals";
 import { startAreaPicker, startCaptureMode, clearScreenshotPreview, highlightArea, clearHighlight } from "../hooks/useCapture";
 import { toggleRecording, clearRecordingPreview } from "../hooks/useRecording";
-import { escapeHtml, formatSelectedElement } from "../utils/format";
+import { formatSelectedElement } from "../utils/format";
 
 export function CaptureTools() {
-  const state = currentState.value;
-  const area = state.selectedArea;
-  const recording = recordingState.value;
-  const hasScreenshot = Boolean(state.screenshotDataUrl);
-  const hasRecording = Boolean(recording.objectUrl);
+  const state = useComputed(() => currentState.value);
+  const area = useComputed(() => currentState.value.selectedArea);
+  const recording = useComputed(() => recordingState.value);
+  const hasScreenshot = useComputed(() => Boolean(currentState.value.screenshotDataUrl));
+  const hasRecording = useComputed(() => Boolean(recordingState.value.objectUrl));
 
   const handleAreaHoverStart = () => {
-    if (area) {
-      highlightArea(area);
+    if (area.value) {
+      highlightArea(area.value);
     }
   };
 
@@ -42,15 +43,15 @@ export function CaptureTools() {
           </div>
           <div
             id="areaSummary"
-            class={`summary-box compact ${area ? "" : "empty hidden"}`}
+            class={`summary-box compact ${area.value ? "" : "empty hidden"}`}
             onMouseEnter={handleAreaHoverStart}
             onMouseLeave={handleAreaHoverEnd}
             onFocus={handleAreaHoverStart}
             onBlur={handleAreaHoverEnd}
-            tabIndex={area ? 0 : -1}
+            tabIndex={area.value ? 0 : -1}
           >
-            {area ? (
-              <AreaSummaryContent area={area} />
+            {area.value ? (
+              <AreaSummaryContent area={area.value} />
             ) : (
               "No area selected."
             )}
@@ -64,7 +65,7 @@ export function CaptureTools() {
               {captureButtonText.value}
             </button>
           </div>
-          <div id="screenshotWrap" class={`preview-wrap ${hasScreenshot ? "" : "hidden"}`}>
+          <div id="screenshotWrap" class={`preview-wrap ${hasScreenshot.value ? "" : "hidden"}`}>
             <button
               id="clearScreenshot"
               class="preview-close"
@@ -78,7 +79,7 @@ export function CaptureTools() {
               id="screenshotPreview"
               class="screenshot"
               alt="Screenshot preview"
-              src={state.screenshotDataUrl}
+              src={state.value.screenshotDataUrl}
             />
           </div>
         </section>
@@ -90,7 +91,7 @@ export function CaptureTools() {
               {recordingButtonText.value}
             </button>
           </div>
-          <div id="recordingWrap" class={`preview-wrap ${hasRecording ? "" : "hidden"}`}>
+          <div id="recordingWrap" class={`preview-wrap ${hasRecording.value ? "" : "hidden"}`}>
             <button
               id="clearRecording"
               class="preview-close"
@@ -105,7 +106,7 @@ export function CaptureTools() {
               class="screenshot"
               controls
               playsInline
-              src={recording.objectUrl}
+              src={recording.value.objectUrl}
             />
           </div>
         </section>

@@ -1,4 +1,5 @@
 import { useRef, useEffect } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import type { UserAction } from "../../shared/types";
 import {
   currentState,
@@ -16,11 +17,11 @@ import {
   handleIssueOptionsChange,
 } from "../hooks/useActions";
 import { highlightArea, clearHighlight } from "../hooks/useCapture";
-import { formatActionIndex, formatActionTitle, formatActionDetail, escapeHtml } from "../utils/format";
+import { formatActionIndex, formatActionTitle, formatActionDetail } from "../utils/format";
 
 export function ActionTimeline() {
-  const state = currentState.value;
-  const actions = state.actions || [];
+  const actions = useComputed(() => currentState.value.actions || []);
+  const includeActions = useComputed(() => issueOptions.value.includeActions);
   const listRef = useRef<HTMLDivElement>(null);
   const wasNearBottomRef = useRef(true);
 
@@ -28,7 +29,7 @@ export function ActionTimeline() {
     if (wasNearBottomRef.current && listRef.current) {
       listRef.current.scrollTop = listRef.current.scrollHeight;
     }
-  }, [actions.length]);
+  }, [actions.value.length]);
 
   const handleScroll = () => {
     if (listRef.current) {
@@ -58,7 +59,7 @@ export function ActionTimeline() {
             <input
               id="includeActionsInIssue"
               type="checkbox"
-              checked={issueOptions.value.includeActions}
+              checked={includeActions.value}
               onChange={(e) => handleIssueOptionsChange((e.target as HTMLInputElement).checked)}
             />
             <span>Use in issue</span>
@@ -101,7 +102,7 @@ export function ActionTimeline() {
         ref={listRef}
         onScroll={handleScroll}
       >
-        {actions.map((action, index) => (
+        {actions.value.map((action, index) => (
           <ActionRow
             key={action.id}
             action={action}

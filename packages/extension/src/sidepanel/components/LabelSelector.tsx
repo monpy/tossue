@@ -1,9 +1,12 @@
 import { useState } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { labelPresets, selectedLabels, DEFAULT_LABEL_PRESETS } from "../store/signals";
 import { persistDraft, saveLabelPresets } from "../hooks/useTabState";
 
 export function LabelSelector() {
   const [customInput, setCustomInput] = useState("");
+  const presets = useComputed(() => labelPresets.value);
+  const selected = useComputed(() => selectedLabels.value);
 
   const toggleLabel = async (label: string) => {
     const next = new Set(selectedLabels.value);
@@ -57,8 +60,8 @@ export function LabelSelector() {
     <div class="full label-editor">
       <span>Labels</span>
       <div class="label-chip-list" id="labelPresetList">
-        {labelPresets.value.map((label) => {
-          const isSelected = selectedLabels.value.has(label);
+        {presets.value.map((label) => {
+          const isSelected = selected.value.has(label);
           const isCustom = !DEFAULT_LABEL_PRESETS.includes(label);
           return (
             <button

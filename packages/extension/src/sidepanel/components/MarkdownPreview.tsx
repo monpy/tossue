@@ -6,6 +6,7 @@ export function MarkdownPreview() {
     statusMessage.value = "Markdown copied.";
   };
 
+  // Use signals directly in JSX - @preact/signals handles reactivity automatically
   return (
     <section class="card">
       <div class="section-title-row">
@@ -18,13 +19,13 @@ export function MarkdownPreview() {
       </div>
       <label>
         <span>Issue Title</span>
-        <input id="issueTitlePreview" value={issueTitle.value} readOnly />
+        <input id="issueTitlePreview" value={issueTitle} readOnly />
       </label>
       <textarea
         id="markdownPreview"
         rows={18}
         class="mono"
-        value={markdown.value}
+        value={markdown}
         readOnly
       />
     </section>

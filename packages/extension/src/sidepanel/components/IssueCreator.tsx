@@ -1,3 +1,4 @@
+import { useComputed } from "@preact/signals";
 import {
   currentState,
   currentHelper,
@@ -13,39 +14,42 @@ import { sanitizeFilename } from "../utils/format";
 import { blobUrlToDataUrl } from "../utils/image";
 
 export function IssueCreator() {
-  const helper = currentHelper.value;
+  const helper = useComputed(() => currentHelper.value);
+  const status = useComputed(() => statusMessage.value);
 
   const getHintText = () => {
-    if (!helper.reachable) {
+    const h = helper.value;
+    if (!h.reachable) {
       return "Helper に接続できないため、Issue の直接作成は無効です。`Copy` を使って手動投稿してください。";
     }
-    if (!helper.github?.gh_installed) {
+    if (!h.github?.gh_installed) {
       return "helper は動作していますが `gh` が未インストールのため、Issue の直接作成はできません。";
     }
-    if (!helper.github?.authenticated) {
+    if (!h.github?.authenticated) {
       return "helper は動作していますが、GitHub CLI のログインが必要です。`Login via Helper` の後に `Refresh Helper` してください。";
     }
     return "helper と GitHub CLI に疎通できています。直接 Issue を作成できます。";
   };
 
   const handleCreateIssue = async () => {
+    const h = helper.value;
     const state = currentState.value;
     const draft = state.draft;
     const labels = Array.from(selectedLabels.value)
       .map((label) => String(label || "").trim())
       .filter(Boolean);
 
-    if (!helper.reachable) {
+    if (!h.reachable) {
       statusMessage.value = "Tossue Helper is not reachable. Use Copy and create the issue manually.";
       return;
     }
 
-    if (!helper.github?.gh_installed) {
+    if (!h.github?.gh_installed) {
       statusMessage.value = "Tossue Helper is reachable, but gh is not installed on this machine.";
       return;
     }
 
-    if (!helper.github?.authenticated) {
+    if (!h.github?.authenticated) {
       statusMessage.value = "GitHub CLI is not authenticated in Tossue Helper. Run gh auth login first.";
       return;
     }
@@ -99,7 +103,7 @@ export function IssueCreator() {
         {getHintText()}
       </p>
       <p id="submitStatus" class="status">
-        {statusMessage.value}
+        {status.value}
       </p>
     </section>
   );

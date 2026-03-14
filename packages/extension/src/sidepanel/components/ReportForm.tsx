@@ -1,17 +1,18 @@
+import { useComputed } from "@preact/signals";
 import { currentState, currentHelper, selectedLabels } from "../store/signals";
 import { persistDraft } from "../hooks/useTabState";
 import { LabelSelector } from "./LabelSelector";
 
 export function ReportForm() {
-  const state = currentState.value;
-  const draft = state.draft;
-  const helper = currentHelper.value;
+  const draft = useComputed(() => currentState.value.draft);
+  const repositories = useComputed(() => currentHelper.value.repositories);
 
-  const handleInput = async (field: keyof typeof draft, value: string) => {
+  const handleInput = async (field: string, value: string) => {
+    const state = currentState.value;
     currentState.value = {
       ...state,
       draft: {
-        ...draft,
+        ...state.draft,
         [field]: value,
         labels: Array.from(selectedLabels.value),
       },
@@ -28,11 +29,11 @@ export function ReportForm() {
             id="repo"
             list="repoOptions"
             placeholder="owner/repo"
-            value={draft.repo}
+            value={draft.value.repo}
             onInput={(e) => handleInput("repo", (e.target as HTMLInputElement).value)}
           />
           <datalist id="repoOptions">
-            {helper.repositories.map((repo) => (
+            {repositories.value.map((repo) => (
               <option key={repo.name_with_owner} value={repo.name_with_owner} />
             ))}
           </datalist>
@@ -49,7 +50,7 @@ export function ReportForm() {
             <textarea
               id="summary"
               rows={3}
-              value={draft.summary}
+              value={draft.value.summary}
               onInput={(e) => handleInput("summary", (e.target as HTMLTextAreaElement).value)}
             />
           </label>
@@ -58,7 +59,7 @@ export function ReportForm() {
             <textarea
               id="currentBehavior"
               rows={4}
-              value={draft.currentBehavior}
+              value={draft.value.currentBehavior}
               onInput={(e) => handleInput("currentBehavior", (e.target as HTMLTextAreaElement).value)}
             />
           </label>
@@ -67,7 +68,7 @@ export function ReportForm() {
             <textarea
               id="expectedBehavior"
               rows={4}
-              value={draft.expectedBehavior}
+              value={draft.value.expectedBehavior}
               onInput={(e) => handleInput("expectedBehavior", (e.target as HTMLTextAreaElement).value)}
             />
           </label>
