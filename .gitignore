@@ -33,3 +33,6 @@ helper/src-tauri/target/
 .claude/
 !.claude/commands/
 .plans/
+
+skills-lock.json
+.agents
