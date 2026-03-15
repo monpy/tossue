@@ -7,6 +7,7 @@ import {
   repositoryLabels,
   isLoadingLabels,
   currentState,
+  currentHelper,
 } from "../store/signals";
 import { persistDraft, saveLabelPresets } from "../hooks/useTabState";
 import { fetchRepositoryLabels } from "../hooks/useHelper";
@@ -26,14 +27,19 @@ export function LabelSelector() {
   const selected = useComputed(() => selectedLabels.value);
   const customLabels = useComputed(() => labelPresets.value);
 
+  const helper = useComputed(() => currentHelper.value);
+
   useEffect(() => {
+    const h = helper.value;
+    const isConnected = h.reachable && h.github?.authenticated;
     const currentRepo = repo.value;
-    if (currentRepo && currentRepo.includes("/")) {
+
+    if (isConnected && currentRepo && currentRepo.includes("/")) {
       fetchRepositoryLabels(currentRepo);
     } else {
       repositoryLabels.value = [];
     }
-  }, [repo.value]);
+  }, [repo.value, helper.value.reachable, helper.value.github?.authenticated]);
 
   const allLabels = useComputed((): LabelDisplayItem[] => {
     const items: LabelDisplayItem[] = [];
@@ -103,21 +109,27 @@ export function LabelSelector() {
     }
   };
 
+  const isHelperConnected = helper.value.reachable && helper.value.github?.authenticated;
   const hasRepo = repo.value && repo.value.includes("/");
+  const canShowLabels = isHelperConnected && hasRepo;
 
   return (
     <div class="full label-editor">
       <span>Labels</span>
 
-      {!hasRepo && (
+      {!isHelperConnected && (
+        <p class="text-muted text-xs">Connect to Tossue Helper to use labels</p>
+      )}
+
+      {isHelperConnected && !hasRepo && (
         <p class="text-muted text-xs">Select a repository to see available labels</p>
       )}
 
-      {hasRepo && loading.value && (
+      {canShowLabels && loading.value && (
         <p class="text-muted text-xs">Loading labels...</p>
       )}
 
-      {hasRepo && !loading.value && (
+      {canShowLabels && !loading.value && (
         <>
           <div class="label-chip-list" id="labelPresetList">
             {allLabels.value.map((label) => {
