@@ -37,9 +37,9 @@ function installPageContextCapture() {
       safeSendMessage({ type: "CONSOLE_EVENT", payload });
     } else if (type === "network") {
       safeSendMessage({ type: "NETWORK_EVENT", payload });
-    } else if (type === "vue_component") {
-      // Cache Vue component info on elements
-      handleVueComponentResult(payload);
+    } else if (type === "framework_component") {
+      // Cache framework component info on elements
+      handleFrameworkComponentResult(payload);
     }
   }) as EventListener);
 }
@@ -47,9 +47,9 @@ function installPageContextCapture() {
 // Pending Vue component detection requests
 const pendingVueRequests = new Map();
 
-function requestVueComponentInfo(element, selector) {
-  // Request Vue component info from page context
-  window.dispatchEvent(new CustomEvent("__tossue_get_vue_component__", {
+function requestFrameworkComponentInfo(element, selector) {
+  // Request framework component info from page context
+  window.dispatchEvent(new CustomEvent("__tossue_get_framework_component__", {
     detail: { selector }
   }));
 
@@ -66,14 +66,14 @@ function requestVueComponentInfo(element, selector) {
   });
 }
 
-function handleVueComponentResult(payload) {
+function handleFrameworkComponentResult(payload) {
   const { selector, component } = payload;
   const pending = pendingVueRequests.get(selector);
   if (pending) {
     pendingVueRequests.delete(selector);
     // Cache the result on the element
     if (pending.element) {
-      pending.element.__tossue_vue_info__ = component;
+      pending.element.__tossue_framework_info__ = component;
     }
     pending.resolve(component);
   }
@@ -418,10 +418,10 @@ function paintOutline(element) {
   overlayState.outline.style.width = `${rect.width}px`;
   overlayState.outline.style.height = `${rect.height}px`;
 
-  // Request Vue component info for this element (will be cached)
+  // Request framework component info for this element (will be cached)
   const selector = buildSelector(element);
-  if (selector && !element.__tossue_vue_info__) {
-    requestVueComponentInfo(element, selector).then((info) => {
+  if (selector && !element.__tossue_framework_info__) {
+    requestFrameworkComponentInfo(element, selector).then((info) => {
       // Update hover label if still hovering the same element
       if (overlayState.hoveredElement === element && info) {
         paintHoverLabel(element, rect);
@@ -744,77 +744,15 @@ function detectBrowserLabel() {
 }
 
 function detectFrameworkInfo(element) {
-  const reactInfo = detectReactInfo(element);
-  if (reactInfo) {
-    return reactInfo;
-  }
-
-  // Check cached Vue info first (set by injected script)
-  const cachedVue = element.__tossue_vue_info__;
-  if (cachedVue) {
-    return cachedVue;
+  // Check cached framework info (set by injected script)
+  const cached = element.__tossue_framework_info__;
+  if (cached) {
+    return cached;
   }
 
   return null;
 }
 
-function detectReactInfo(element) {
-  let current = element;
-
-  while (current) {
-    const fiber = findReactFiber(current);
-    if (fiber) {
-      const trail = buildReactComponentTrail(fiber).filter(Boolean);
-      return {
-        framework: "React",
-        selectedComponent: trail[0] || "",
-        componentTrail: trail.slice(0, 6)
-      };
-    }
-
-    current = current.parentElement;
-  }
-
-  return null;
-}
-
-function findReactFiber(element) {
-  for (const key of Object.keys(element)) {
-    if (key.startsWith("__reactFiber$") || key.startsWith("__reactInternalInstance$")) {
-      return element[key];
-    }
-  }
-
-  return null;
-}
-
-function buildReactComponentTrail(fiber) {
-  const trail = [];
-  let current = fiber;
-
-  while (current && trail.length < 6) {
-    const name = getReactComponentName(current);
-    if (name && !trail.includes(name)) {
-      trail.push(name);
-    }
-    current = current.return;
-  }
-
-  return trail;
-}
-
-function getReactComponentName(fiber) {
-  const type = fiber.elementType || fiber.type;
-  if (!type) {
-    return "";
-  }
-
-  if (typeof type === "string") {
-    return type;
-  }
-
-  return type.displayName || type.name || "";
-}
 
 
 function detectDomTreeInfo(element) {
