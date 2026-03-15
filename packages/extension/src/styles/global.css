@@ -705,6 +705,11 @@ textarea {
   gap: 8px;
 }
 
+.mode-option-wrapper {
+  display: grid;
+  gap: 0;
+}
+
 .mode-option {
   display: flex;
   align-items: flex-start;
@@ -717,6 +722,11 @@ textarea {
   transition: border-color 0.15s, background-color 0.15s;
 }
 
+.mode-option-wrapper:has(.mode-option.selected) .mode-option {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 .mode-option:hover {
   background: var(--surface-strong);
 }
@@ -724,6 +734,20 @@ textarea {
 .mode-option.selected {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.mode-option-details {
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-top: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: var(--surface);
+}
+
+.mode-details-content {
+  display: grid;
+  gap: 8px;
 }
 
 .mode-option input[type="radio"] {

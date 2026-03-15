@@ -1,8 +1,7 @@
 import { githubOAuthState } from "../store/signals";
 import { saveGitHubOAuthState } from "../hooks/useSettings";
 
-// OAuth Worker の URL（デプロイ後に変更）
-const OAUTH_WORKER_URL = "https://tossue-oauth.workers.dev";
+const OAUTH_WORKER_URL = "https://tossue-oauth.monpy.workers.dev";
 
 // 開発時は localhost を使用
 const DEV_OAUTH_WORKER_URL = "http://localhost:8787";
@@ -77,7 +76,7 @@ export async function startOAuthFlow(): Promise<void> {
           return;
         }
         resolve(callbackUrl);
-      }
+      },
     );
   });
 
@@ -110,7 +109,9 @@ export async function startOAuthFlow(): Promise<void> {
 
   if (!tokenResponse.ok) {
     const errorData = await tokenResponse.json();
-    throw new Error(errorData.error_description || errorData.error || "Token exchange failed");
+    throw new Error(
+      errorData.error_description || errorData.error || "Token exchange failed",
+    );
   }
 
   const tokenData: TokenResponse = await tokenResponse.json();
