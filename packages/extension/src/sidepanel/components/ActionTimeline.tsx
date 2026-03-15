@@ -231,7 +231,7 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
         <span class="action-row-index">{formatActionIndex(index + 1)}</span>
         <div class="action-row-copy">
           <strong class="action-row-title">{label}</strong>
-          {detail && <span class="action-row-detail">{detail}</span>}
+          {detail && <span class="action-row-detail" title={detail}>{detail}</span>}
         </div>
       </article>
     </>
@@ -278,7 +278,7 @@ function ConsoleRow({ entry, index, onDelete, onTrimBefore }: ConsoleRowProps) {
           <strong class="action-row-title">
             {levelIcon} console.{entry.level}
           </strong>
-          <span class="action-row-detail">{entry.message.slice(0, 100)}</span>
+          <span class="action-row-detail" title={entry.message}>{entry.message.slice(0, 100)}</span>
         </div>
       </article>
     </>
@@ -334,7 +334,7 @@ function NetworkRow({ entry, index, onDelete, onTrimBefore }: NetworkRowProps) {
           <strong class="action-row-title">
             🌐 {entry.method} {statusText}
           </strong>
-          <span class="action-row-detail">{displayUrl.slice(0, 80)}</span>
+          <span class="action-row-detail" title={entry.url}>{displayUrl.slice(0, 80)}</span>
         </div>
       </article>
     </>
