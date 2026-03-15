@@ -204,7 +204,8 @@
 
     while (current && trail.length < 6) {
       const name = getReactComponentName(current);
-      if (name && !trail.includes(name)) {
+      // Only include user-defined components (PascalCase), skip native DOM elements
+      if (name && !trail.includes(name) && isUserComponent(name)) {
         trail.push(name);
       }
       current = current.return as typeof current;
@@ -218,6 +219,12 @@
     if (!type) return "";
     if (typeof type === "string") return type;
     return type.displayName || type.name || "";
+  }
+
+  function isUserComponent(name: string): boolean {
+    // User-defined React components start with uppercase letter (PascalCase)
+    // Native DOM elements are lowercase (div, input, span, etc.)
+    return /^[A-Z]/.test(name);
   }
 
   function getVueComponentInfo(element: Element): { framework: string; selectedComponent: string; componentTrail: string[]; filePath?: string } | null {
@@ -289,7 +296,8 @@
 
     while (current && trail.length < 6) {
       const name = getVue3ComponentName(current);
-      if (name && !trail.includes(name)) {
+      // Only include user-defined components, skip internal Vue components
+      if (name && !trail.includes(name) && isUserComponent(name)) {
         trail.push(name);
       }
       current = current.parent as typeof current;
