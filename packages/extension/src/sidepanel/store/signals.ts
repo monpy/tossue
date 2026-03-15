@@ -27,7 +27,8 @@ function createEmptyState(): TabState {
     actionHistoryFuture: [],
     consoleEntries: [],
     networkEntries: [],
-    screenshotDataUrl: "",
+    screenshots: [],
+    recordings: [],
     draft: {
       repo: "",
       summary: "",
@@ -87,11 +88,11 @@ export const isRecording = computed(() =>
 );
 
 export const hasRecording = computed(() =>
-  recordingState.value.objectUrl !== ""
+  (currentState.value.recordings?.length ?? 0) > 0 || recordingState.value.objectUrl !== ""
 );
 
 export const hasScreenshot = computed(() =>
-  currentState.value.screenshotDataUrl !== ""
+  (currentState.value.screenshots?.length ?? 0) > 0
 );
 
 export const markdown = computed(() =>
@@ -111,6 +112,9 @@ export const pendingCaptureId = signal<number>(0);
 export const selectAreaButtonText = signal<string>("Select Area");
 export const captureButtonText = signal<string>("Start Capture");
 export const recordingButtonText = signal<string>("Start Recording");
+
+export const isSelectingArea = signal<boolean>(false);
+export const isCapturing = signal<boolean>(false);
 
 export const devtoolsStatus = signal<DevtoolsStatus>({
   panelOpen: false,

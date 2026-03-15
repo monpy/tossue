@@ -29,6 +29,7 @@ export type ContentMessage = {
     | "CLEAR_SELECTED_AREA_HIGHLIGHT"
     | "AREA_SELECTED"
     | "CAPTURE_RECT_SELECTED"
+    | "PICKER_CANCELLED"
     | "ACTION_LOGGED"
     | "CONSOLE_EVENT"
     | "NETWORK_EVENT";

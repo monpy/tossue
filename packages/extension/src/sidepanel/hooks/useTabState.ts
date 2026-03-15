@@ -7,6 +7,8 @@ import {
   issueOptions,
   selectAreaButtonText,
   captureButtonText,
+  isSelectingArea,
+  isCapturing,
   DEFAULT_LABEL_PRESETS,
 } from "../store/signals";
 import { refreshHelperState } from "./useHelper";
@@ -22,10 +24,16 @@ export function useTabState() {
     const handleMessage = (message: Message) => {
       if (message.type === "STATE_UPDATED" && message.tabId === activeTabId.value) {
         const nextState = message.state as TabState;
+        const prevArea = currentState.value.selectedArea;
         const shouldHydrate = !draftsEqual(currentState.value.draft, nextState?.draft);
         currentState.value = nextState;
         if (shouldHydrate) {
           hydrateLabels(nextState.draft?.labels || []);
+        }
+        // Reset active states when area selection completes
+        if (nextState.selectedArea !== prevArea) {
+          selectAreaButtonText.value = nextState.selectedArea ? "Select Again" : "Select Area";
+          isSelectingArea.value = false;
         }
       }
     };

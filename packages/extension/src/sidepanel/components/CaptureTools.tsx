@@ -1,23 +1,22 @@
 import { useComputed } from "@preact/signals";
 import {
   currentState,
-  recordingState,
   captureStatusMessage,
   selectAreaButtonText,
   captureButtonText,
   recordingButtonText,
+  isSelectingArea,
+  isCapturing,
 } from "../store/signals";
-import { startAreaPicker, startCaptureMode, clearScreenshotPreview, highlightArea, clearHighlight } from "../hooks/useCapture";
-import { toggleRecording, clearRecordingPreview } from "../hooks/useRecording";
+import { startAreaPicker, startCaptureMode, removeScreenshot, highlightArea, clearHighlight } from "../hooks/useCapture";
+import { toggleRecording, removeRecording } from "../hooks/useRecording";
 import { formatSelectedElement } from "../utils/format";
-import { Button, Card } from "./ui";
+import { Button, Card, MediaGrid } from "./ui";
 
 export function CaptureTools() {
-  const state = useComputed(() => currentState.value);
   const area = useComputed(() => currentState.value.selectedArea);
-  const recording = useComputed(() => recordingState.value);
-  const hasScreenshot = useComputed(() => Boolean(currentState.value.screenshotDataUrl));
-  const hasRecording = useComputed(() => Boolean(recordingState.value.objectUrl));
+  const screenshots = useComputed(() => currentState.value.screenshots || []);
+  const recordings = useComputed(() => currentState.value.recordings || []);
 
   const handleAreaHoverStart = () => {
     if (area.value) {
@@ -38,7 +37,7 @@ export function CaptureTools() {
         <Card variant="nested">
           <div class="capture-tool-head">
             <h3 class="text-[13px] font-bold">Select Area</h3>
-            <Button id="selectArea" variant="secondary" onClick={startAreaPicker}>
+            <Button id="selectArea" variant="secondary" active={isSelectingArea.value} onClick={startAreaPicker}>
               {selectAreaButtonText.value}
             </Button>
           </div>
@@ -62,27 +61,11 @@ export function CaptureTools() {
         <Card variant="nested">
           <div class="capture-tool-head">
             <h3 class="text-[13px] font-bold">Capture Image</h3>
-            <Button id="captureScreenshot" variant="secondary" onClick={startCaptureMode}>
+            <Button id="captureScreenshot" variant="secondary" active={isCapturing.value} onClick={startCaptureMode}>
               {captureButtonText.value}
             </Button>
           </div>
-          <div id="screenshotWrap" class={`preview-wrap ${hasScreenshot.value ? "" : "hidden"}`}>
-            <button
-              id="clearScreenshot"
-              class="preview-close"
-              type="button"
-              aria-label="Remove screenshot"
-              onClick={clearScreenshotPreview}
-            >
-              ×
-            </button>
-            <img
-              id="screenshotPreview"
-              class="screenshot"
-              alt="Screenshot preview"
-              src={state.value.screenshotDataUrl}
-            />
-          </div>
+          <MediaGrid items={screenshots.value} onRemove={removeScreenshot} />
         </Card>
 
         <Card variant="nested">
@@ -92,24 +75,7 @@ export function CaptureTools() {
               {recordingButtonText.value}
             </Button>
           </div>
-          <div id="recordingWrap" class={`preview-wrap ${hasRecording.value ? "" : "hidden"}`}>
-            <button
-              id="clearRecording"
-              class="preview-close"
-              type="button"
-              aria-label="Remove recording"
-              onClick={clearRecordingPreview}
-            >
-              ×
-            </button>
-            <video
-              id="recordingPreview"
-              class="screenshot"
-              controls
-              playsInline
-              src={recording.value.objectUrl}
-            />
-          </div>
+          <MediaGrid items={recordings.value} onRemove={removeRecording} />
         </Card>
       </div>
       <p id="captureStatus" class="status">

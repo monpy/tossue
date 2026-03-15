@@ -67,7 +67,7 @@ async function handleMessage(
       updateState(tabId, { captureRect: message.payload as TabState["captureRect"] });
       return await respondWithState(tabId);
     case "CLEAR_SCREENSHOT":
-      updateState(tabId, { captureRect: null, screenshotDataUrl: "" });
+      updateState(tabId, { captureRect: null, screenshots: [] });
       return await respondWithState(tabId);
     case "ACTION_LOGGED":
       appendAction(tabId, message.payload as Partial<UserAction>);
@@ -168,7 +168,8 @@ function createEmptyState(): TabState {
     actionHistoryFuture: [],
     consoleEntries: [],
     networkEntries: [],
-    screenshotDataUrl: "",
+    screenshots: [],
+    recordings: [],
     draft: {
       repo: "",
       summary: "",
@@ -399,9 +400,6 @@ async function captureScreenshot(
     format: "png",
   });
 
-  if (tabId) {
-    updateState(tabId, { screenshotDataUrl });
-  }
   return screenshotDataUrl;
 }
 

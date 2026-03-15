@@ -55,9 +55,11 @@ export function buildMarkdown(params: BuildMarkdownParams): string {
 
   pushSection(sections, "Diagnostics", diagnostics);
 
+  const screenshotCount = state.screenshots?.length ?? 0;
+  const recordingCount = state.recordings?.length ?? 0;
   const attachmentLines = [
-    state.screenshotDataUrl ? "- Screenshot captured in extension panel." : "",
-    hasRecording ? "- Screen recording captured in extension panel." : ""
+    screenshotCount > 0 ? `- ${screenshotCount} screenshot(s) captured in extension panel.` : "",
+    recordingCount > 0 || hasRecording ? `- ${recordingCount + (hasRecording && recordingCount === 0 ? 1 : 0)} screen recording(s) captured in extension panel.` : ""
   ];
   pushSection(sections, "Attachments", attachmentLines);
 

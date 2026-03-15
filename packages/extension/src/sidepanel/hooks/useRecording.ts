@@ -1,11 +1,17 @@
 import { useEffect } from "preact/hooks";
+import type { MediaItem } from "../../shared/types";
 import {
   activeTabId,
+  currentState,
   recordingState,
   captureStatusMessage,
   recordingButtonText,
 } from "../store/signals";
 import { decodeFrame } from "../utils/image";
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 export function useRecording() {
   useEffect(() => {
@@ -30,7 +36,7 @@ export function useRecording() {
 
   return {
     toggleRecording,
-    clearRecordingPreview,
+    removeRecording,
   };
 }
 
@@ -89,22 +95,17 @@ export async function toggleRecording(): Promise<void> {
   }
 }
 
-export function clearRecordingPreview(): void {
-  const state = recordingState.value;
-  if (state.recorder && state.recorder.state !== "inactive") {
-    return;
+export function removeRecording(id: string): void {
+  const state = currentState.value;
+  const recordingToRemove = (state.recordings || []).find((item) => item.id === id);
+  if (recordingToRemove) {
+    URL.revokeObjectURL(recordingToRemove.dataUrl);
   }
-
-  if (state.objectUrl) {
-    URL.revokeObjectURL(state.objectUrl);
-  }
-
-  recordingState.value = {
+  currentState.value = {
     ...state,
-    objectUrl: "",
-    chunks: [],
+    recordings: (state.recordings || []).filter((item) => item.id !== id),
   };
-  captureStatusMessage.value = "Recorded preview removed.";
+  captureStatusMessage.value = "Recording removed.";
 }
 
 function createRecordingCanvasStream(): { canvas: HTMLCanvasElement; stream: MediaStream } {
@@ -148,25 +149,38 @@ function drawRecordingFrame(base64Data: string, metadata?: { deviceWidth: number
 }
 
 function finalizeRecording(): void {
-  const state = recordingState.value;
-  if (state.objectUrl) {
-    URL.revokeObjectURL(state.objectUrl);
+  const recState = recordingState.value;
+  if (recState.objectUrl) {
+    URL.revokeObjectURL(recState.objectUrl);
   }
 
-  const blob = new Blob(state.chunks, {
-    type: state.recorder?.mimeType || "video/webm",
+  const blob = new Blob(recState.chunks, {
+    type: recState.recorder?.mimeType || "video/webm",
   });
   const objectUrl = URL.createObjectURL(blob);
 
-  for (const track of state.stream?.getTracks() || []) {
+  for (const track of recState.stream?.getTracks() || []) {
     track.stop();
   }
+
+  // Add to recordings array
+  const newItem: MediaItem = {
+    id: generateId(),
+    type: "video",
+    dataUrl: objectUrl,
+    capturedAt: Date.now(),
+  };
+  const tabState = currentState.value;
+  currentState.value = {
+    ...tabState,
+    recordings: [...(tabState.recordings || []), newItem],
+  };
 
   recordingState.value = {
     stream: null,
     recorder: null,
     chunks: [],
-    objectUrl,
+    objectUrl: "",
     canvas: null,
     context: null,
     framePending: Promise.resolve(),

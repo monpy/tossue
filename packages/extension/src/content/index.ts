@@ -224,7 +224,9 @@ function handlePointerClick(event) {
 
 function handleEscape(event) {
   if (event.key === "Escape") {
+    const mode = overlayState.mode;
     stopAreaPicker();
+    safeSendMessage({ type: "PICKER_CANCELLED", payload: { mode } });
   }
 }
 
