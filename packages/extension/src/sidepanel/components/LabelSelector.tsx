@@ -8,9 +8,12 @@ import {
   isLoadingLabels,
   currentState,
   currentHelper,
+  issueCreationSettings,
+  githubOAuthState,
 } from "../store/signals";
 import { persistDraft, saveLabelPresets } from "../hooks/useTabState";
 import { fetchRepositoryLabels } from "../hooks/useHelper";
+import { getRepositoryLabels } from "../utils/github-api";
 import { Button } from "./ui";
 
 type LabelDisplayItem = {
@@ -28,8 +31,34 @@ export function LabelSelector() {
   const customLabels = useComputed(() => labelPresets.value);
 
   const helper = useComputed(() => currentHelper.value);
+  const createMethod = useComputed(() => issueCreationSettings.value.createMethod);
+  const oauth = useComputed(() => githubOAuthState.value);
 
+  // GitHub API モード用のラベル取得
   useEffect(() => {
+    const method = createMethod.value;
+    const oauthState = oauth.value;
+
+    if (method === "github-api" && oauthState.accessToken && oauthState.selectedRepo) {
+      isLoadingLabels.value = true;
+      getRepositoryLabels(oauthState.selectedRepo)
+        .then((labels) => {
+          repositoryLabels.value = labels;
+        })
+        .catch(() => {
+          repositoryLabels.value = [];
+        })
+        .finally(() => {
+          isLoadingLabels.value = false;
+        });
+    }
+  }, [createMethod.value, oauth.value.accessToken, oauth.value.selectedRepo]);
+
+  // Helper モード用のラベル取得
+  useEffect(() => {
+    const method = createMethod.value;
+    if (method !== "gh-cli") return;
+
     const h = helper.value;
     const isConnected = h.reachable && h.github?.authenticated;
     const currentRepo = repo.value;
@@ -40,7 +69,7 @@ export function LabelSelector() {
     } else {
       repositoryLabels.value = [];
     }
-  }, [repo.value, helper.value.reachable, helper.value.github?.authenticated, helper.value.repositories]);
+  }, [createMethod.value, repo.value, helper.value.reachable, helper.value.github?.authenticated, helper.value.repositories]);
 
   const allLabels = useComputed((): LabelDisplayItem[] => {
     const items: LabelDisplayItem[] = [];
@@ -110,23 +139,54 @@ export function LabelSelector() {
     }
   };
 
+  const method = createMethod.value;
+  const oauthState = oauth.value;
+
+  // GitHub API モード: OAuth 認証済み + リポジトリ選択済み
+  const isGitHubApiReady =
+    method === "github-api" && !!oauthState.accessToken && !!oauthState.selectedRepo;
+
+  // Helper モード: Helper 接続済み + リポジトリ選択済み
   const isHelperConnected = helper.value.reachable && helper.value.github?.authenticated;
   const isValidRepo = helper.value.repositories.some(
     (r) => r.name_with_owner === repo.value
   );
-  const canShowLabels = isHelperConnected && isValidRepo;
+  const isHelperReady = method === "gh-cli" && isHelperConnected && isValidRepo;
+
+  const canShowLabels = isGitHubApiReady || isHelperReady;
+
+  // ヒントメッセージを取得
+  const getHintMessage = (): string | null => {
+    if (method === "github-api") {
+      if (!oauthState.accessToken) {
+        return "Settings タブで GitHub に接続してください";
+      }
+      if (!oauthState.selectedRepo) {
+        return "Settings タブでリポジトリを選択してください";
+      }
+      return null;
+    }
+
+    if (method === "gh-cli") {
+      if (!isHelperConnected) {
+        return "Helper に接続してラベルを使用";
+      }
+      if (!isValidRepo) {
+        return "リポジトリを選択してください";
+      }
+      return null;
+    }
+
+    return null;
+  };
+
+  const hintMessage = getHintMessage();
 
   return (
     <div class="full label-editor">
       <span>Labels</span>
 
-      {!isHelperConnected && (
-        <p class="text-muted text-xs">Connect to Tossue Helper to use labels</p>
-      )}
-
-      {isHelperConnected && !isValidRepo && (
-        <p class="text-muted text-xs">Select a repository to see available labels</p>
-      )}
+      {hintMessage && <p class="text-muted text-xs">{hintMessage}</p>}
 
       {canShowLabels && loading.value && (
         <p class="text-muted text-xs">Loading labels...</p>

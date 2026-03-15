@@ -7,7 +7,6 @@ import {
 } from "../store/signals";
 import type {
   IssueCreationSettings,
-  GitHubOAuthState,
   IssueCreateMethod,
   GitHubOAuthRepository,
 } from "../../shared/types";
@@ -15,6 +14,7 @@ import {
   STORAGE_KEYS,
   DEFAULT_ISSUE_CREATION_SETTINGS,
 } from "../../shared/types";
+import { refreshHelperState } from "./useHelper";
 
 /**
  * 設定の読み込み・保存を管理するフック
@@ -59,6 +59,18 @@ export async function setCreateMethod(method: IssueCreateMethod) {
     createMethod: method,
   };
   await saveIssueCreationSettings();
+
+  // モード切り替え時に接続状態を再チェック
+  switch (method) {
+    case "gh-cli":
+      await refreshHelperState();
+      break;
+    case "github-api":
+      if (githubOAuthState.value.accessToken) {
+        await fetchOAuthRepositories();
+      }
+      break;
+  }
 }
 
 /**
@@ -71,6 +83,19 @@ export async function setCustomApiSettings(settings: {
   issueCreationSettings.value = {
     ...issueCreationSettings.value,
     customApi: settings,
+  };
+  await saveIssueCreationSettings();
+}
+
+/**
+ * Issue 作成設定を部分更新
+ */
+export async function updateIssueCreationSettings(
+  updates: Partial<IssueCreationSettings>
+) {
+  issueCreationSettings.value = {
+    ...issueCreationSettings.value,
+    ...updates,
   };
   await saveIssueCreationSettings();
 }

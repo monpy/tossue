@@ -1,7 +1,6 @@
-import { Card } from "./ui";
+import { needsSetup } from "../store/signals";
 import { StatusFeedback } from "./StatusFeedback";
-import { HelperStatus } from "./HelperStatus";
-import { DevToolsStatus } from "./DevToolsStatus";
+import { SetupPrompt } from "./SetupPrompt";
 import { ReportForm } from "./ReportForm";
 import { CaptureTools } from "./CaptureTools";
 import { ActionTimeline } from "./ActionTimeline";
@@ -9,15 +8,20 @@ import { MarkdownPreview } from "./MarkdownPreview";
 import { IssueCreator } from "./IssueCreator";
 
 export function MainTab() {
+  const showSetup = needsSetup.value;
+
+  if (showSetup) {
+    return (
+      <>
+        <StatusFeedback />
+        <SetupPrompt />
+      </>
+    );
+  }
+
   return (
     <>
       <StatusFeedback />
-
-      <Card class="grid">
-        <HelperStatus />
-        <DevToolsStatus />
-      </Card>
-
       <ReportForm />
       <CaptureTools />
       <ActionTimeline />

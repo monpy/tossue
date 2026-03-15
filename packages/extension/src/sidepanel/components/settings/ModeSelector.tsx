@@ -14,12 +14,12 @@ const MODE_OPTIONS: ModeOption[] = [
   {
     id: "copy",
     label: "Copy to clipboard",
-    description: "Copy Markdown and create issue manually",
+    description: "Copy Markdown. Attachments saved to Downloads folder.",
   },
   {
     id: "github-api",
     label: "GitHub API (OAuth)",
-    description: "Create issue directly via GitHub API",
+    description: "Create issue via API. Attachments saved to Downloads folder.",
   },
   {
     id: "gh-cli",
@@ -32,8 +32,8 @@ export function ModeSelector() {
   const currentMethod = issueCreationSettings.value.createMethod;
 
   return (
-    <div class="settings-section">
-      <h3 class="settings-section-title">Issue Creation Mode</h3>
+    <div class="grid gap-2">
+      <h3 class="text-sm font-bold text-text m-0">Issue Creation Mode</h3>
       <div class="mode-selector">
         {MODE_OPTIONS.map((option) => (
           <div key={option.id} class="mode-option-wrapper">
@@ -49,7 +49,7 @@ export function ModeSelector() {
               />
               <div class="mode-option-content">
                 <div class="mode-option-label">{option.label}</div>
-                <div class="mode-option-desc">{option.description}</div>
+                <div class="text-xs text-muted">{option.description}</div>
               </div>
             </label>
 

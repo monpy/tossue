@@ -8,9 +8,13 @@ export type IssueCreateMethod = "copy" | "github-api" | "gh-cli";
 /** Issue 作成設定 */
 export interface IssueCreationSettings {
   createMethod: IssueCreateMethod;
+  alwaysDownloadAttachments: boolean;
+  downloadPathPrefix?: string;
+  resetAfterCreate: boolean;
   customApi: {
     enabled: boolean;
     endpoint?: string;
+    skipBuiltinCreate?: boolean;
   };
 }
 
@@ -41,6 +45,8 @@ export interface GitHubOAuthRepository {
 /** デフォルトの Issue 作成設定 */
 export const DEFAULT_ISSUE_CREATION_SETTINGS: IssueCreationSettings = {
   createMethod: "copy",
+  alwaysDownloadAttachments: false,
+  resetAfterCreate: true,
   customApi: {
     enabled: false,
   },

@@ -16,10 +16,12 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   color: var(--text);
   background:
     radial-gradient(circle at top right, rgba(187, 90, 29, 0.16), transparent 22rem),
     linear-gradient(180deg, #f6f1e8 0%, #efe6d7 100%);
+  background-attachment: fixed;
   font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
 }
 
@@ -38,6 +40,7 @@ textarea {
   display: grid;
   gap: 12px;
   padding: 12px;
+  overflow-x: hidden;
 }
 
 .devtools-shell {
@@ -640,65 +643,7 @@ textarea {
   border-bottom-color: var(--accent);
 }
 
-/* Status Feedback */
-.status-feedback {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  font-size: 12px;
-}
-
-.status-feedback-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--muted);
-  flex-shrink: 0;
-}
-
-.status-feedback-dot.ok {
-  background: #2b8a3e;
-}
-
-.status-feedback-dot.warn {
-  background: #d97706;
-}
-
-.status-feedback-dot.error {
-  background: #dc2626;
-}
-
-.status-feedback-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.status-feedback-mode {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.status-feedback-detail {
-  color: var(--muted);
-  margin-left: 4px;
-}
-
 /* Settings */
-.settings-section {
-  display: grid;
-  gap: 12px;
-}
-
-.settings-section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-}
 
 .mode-selector {
   display: grid;
@@ -767,11 +712,6 @@ textarea {
   color: var(--text);
 }
 
-.mode-option-desc {
-  font-size: 11px;
-  color: var(--muted);
-  margin-top: 2px;
-}
 
 .settings-status {
   display: flex;

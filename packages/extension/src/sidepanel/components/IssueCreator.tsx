@@ -12,6 +12,7 @@ import {
   githubOAuthState,
 } from "../store/signals";
 import { createIssueViaHelper } from "../hooks/useHelper";
+import { resetStateAfterCreate } from "../hooks/useTabState";
 import { createIssueViaOAuth } from "../utils/github-api";
 import { sanitizeFilename } from "../utils/format";
 import { blobUrlToDataUrl } from "../utils/image";
@@ -23,10 +24,16 @@ export function IssueCreator() {
 
   const getHintText = () => {
     const method = createMethod.value;
+    const settings = issueCreationSettings.value;
 
     switch (method) {
-      case "copy":
-        return "Markdown をクリップボードにコピーして手動で Issue を作成します。";
+      case "copy": {
+        const base = "Markdown をクリップボードにコピーして手動で Issue を作成します。";
+        if (settings.alwaysDownloadAttachments) {
+          return `${base} Attachments もダウンロードされます。`;
+        }
+        return base;
+      }
 
       case "github-api": {
         const oauth = githubOAuthState.value;
@@ -61,7 +68,7 @@ export function IssueCreator() {
   const getButtonLabel = () => {
     switch (createMethod.value) {
       case "copy":
-        return "Copy Markdown";
+        return "Copy Issue";
       case "github-api":
       case "gh-cli":
         return "Create Issue";
@@ -72,6 +79,7 @@ export function IssueCreator() {
 
   const handleCreateIssue = async () => {
     const method = createMethod.value;
+    const settings = issueCreationSettings.value;
     const state = currentState.value;
     const draft = state.draft;
     const labels = Array.from(selectedLabels.value)
@@ -86,22 +94,38 @@ export function IssueCreator() {
       return;
     }
 
-    switch (method) {
-      case "copy":
-        await handleCopyMode(body);
-        break;
+    const skipBuiltin = settings.customApi.enabled && settings.customApi.skipBuiltinCreate;
 
-      case "github-api":
-        await handleGitHubApiMode(title, body, labels);
-        break;
+    // Built-in mode (unless skipped for Custom API only mode)
+    if (!skipBuiltin) {
+      switch (method) {
+        case "copy":
+          await handleCopyMode(title, body);
+          break;
 
-      case "gh-cli":
-        await handleHelperMode(draft.repo, title, body, labels);
-        break;
+        case "github-api":
+          await handleGitHubApiMode(title, body, labels);
+          break;
+
+        case "gh-cli":
+          await handleHelperMode(draft.repo, title, body, labels);
+          break;
+      }
     }
 
     // カスタム API 送信
     await sendToCustomApi(title, body, labels);
+
+    // Custom API only mode の場合はステータスメッセージを設定
+    if (skipBuiltin) {
+      statusMessage.value = "Sent to Custom API";
+    }
+
+    // リセット処理
+    if (settings.resetAfterCreate) {
+      await resetStateAfterCreate();
+      statusMessage.value = `${statusMessage.value} (Form reset)`;
+    }
   };
 
   return (
@@ -126,10 +150,21 @@ export function IssueCreator() {
   );
 }
 
-async function handleCopyMode(body: string): Promise<void> {
+async function handleCopyMode(title: string, body: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(body);
-    statusMessage.value = "Markdown copied to clipboard!";
+
+    const settings = issueCreationSettings.value;
+    if (settings.alwaysDownloadAttachments) {
+      const count = await downloadIssueAttachments(title);
+      if (count > 0) {
+        statusMessage.value = `Copied to clipboard! Downloaded ${count} attachment${count > 1 ? "s" : ""}.`;
+      } else {
+        statusMessage.value = "Copied to clipboard!";
+      }
+    } else {
+      statusMessage.value = "Copied to clipboard!";
+    }
   } catch (error) {
     statusMessage.value = "Failed to copy to clipboard.";
   }
@@ -225,6 +260,12 @@ async function handleHelperMode(
   }
 }
 
+interface AttachmentPayload {
+  filename: string;
+  mimeType: string;
+  dataUrl: string;
+}
+
 async function sendToCustomApi(
   title: string,
   body: string,
@@ -236,6 +277,8 @@ async function sendToCustomApi(
     return;
   }
 
+  const attachments = await collectAttachments();
+
   try {
     await fetch(settings.customApi.endpoint, {
       method: "POST",
@@ -246,12 +289,53 @@ async function sendToCustomApi(
         title,
         body,
         labels,
+        attachments,
         timestamp: new Date().toISOString(),
       }),
     });
   } catch (error) {
     console.warn("Failed to send to custom API:", error);
   }
+}
+
+async function collectAttachments(): Promise<AttachmentPayload[]> {
+  const state = currentState.value;
+  const recording = recordingState.value;
+  const attachments: AttachmentPayload[] = [];
+
+  // Screenshots
+  const screenshots = state.screenshots || [];
+  for (let i = 0; i < screenshots.length; i++) {
+    attachments.push({
+      filename: `screenshot-${i + 1}.png`,
+      mimeType: "image/png",
+      dataUrl: screenshots[i].dataUrl,
+    });
+  }
+
+  // Recordings
+  const recordings = state.recordings || [];
+  for (let i = 0; i < recordings.length; i++) {
+    const rec = recordings[i];
+    const dataUrl = await blobUrlToDataUrl(rec.dataUrl);
+    attachments.push({
+      filename: `recording-${i + 1}.webm`,
+      mimeType: "video/webm",
+      dataUrl,
+    });
+  }
+
+  // Current recording (if any)
+  if (recording.objectUrl) {
+    const dataUrl = await blobUrlToDataUrl(recording.objectUrl);
+    attachments.push({
+      filename: "recording-current.webm",
+      mimeType: "video/webm",
+      dataUrl,
+    });
+  }
+
+  return attachments;
 }
 
 async function openCreatedIssue(issueUrl: string): Promise<void> {
@@ -273,6 +357,13 @@ async function downloadIssueAttachments(title: string): Promise<number> {
 
   const state = currentState.value;
   const recording = recordingState.value;
+  const settings = issueCreationSettings.value;
+
+  // ダウンロードパスのプレフィックス（末尾にスラッシュを確保）
+  let pathPrefix = settings.downloadPathPrefix?.trim() || "";
+  if (pathPrefix && !pathPrefix.endsWith("/")) {
+    pathPrefix += "/";
+  }
 
   const screenshots = state.screenshots || [];
   for (let i = 0; i < screenshots.length; i++) {
@@ -280,7 +371,7 @@ async function downloadIssueAttachments(title: string): Promise<number> {
     jobs.push(
       chrome.downloads.download({
         url: screenshot.dataUrl,
-        filename: `Tossue/${safeTitle}-${timestamp}-screenshot-${i + 1}.png`,
+        filename: `${pathPrefix}${safeTitle}-${timestamp}-screenshot-${i + 1}.png`,
         saveAs: false,
       })
     );
@@ -293,7 +384,7 @@ async function downloadIssueAttachments(title: string): Promise<number> {
     jobs.push(
       chrome.downloads.download({
         url: recordingUrl,
-        filename: `Tossue/${safeTitle}-${timestamp}-recording-${i + 1}.webm`,
+        filename: `${pathPrefix}${safeTitle}-${timestamp}-recording-${i + 1}.webm`,
         saveAs: false,
       })
     );
@@ -305,7 +396,7 @@ async function downloadIssueAttachments(title: string): Promise<number> {
     jobs.push(
       chrome.downloads.download({
         url: recordingUrl,
-        filename: `Tossue/${safeTitle}-${timestamp}-recording-current.webm`,
+        filename: `${pathPrefix}${safeTitle}-${timestamp}-recording-current.webm`,
         saveAs: false,
       })
     );
