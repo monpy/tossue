@@ -422,8 +422,15 @@ label span {
 
 .label-add-row {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+}
+
+.label-add-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 input,
