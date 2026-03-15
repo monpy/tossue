@@ -18,24 +18,6 @@ type LabelDisplayItem = {
   isFromRepo: boolean;
 };
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
-}
-
-function getContrastColor(hexColor: string): string {
-  const rgb = hexToRgb(hexColor);
-  if (!rgb) return "#1b1a17";
-  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  return luminance > 0.5 ? "#1b1a17" : "#ffffff";
-}
-
 export function LabelSelector() {
   const [customInput, setCustomInput] = useState("");
   const repo = useComputed(() => currentState.value.draft.repo);
@@ -140,9 +122,6 @@ export function LabelSelector() {
           <div class="label-chip-list" id="labelPresetList">
             {allLabels.value.map((label) => {
               const isSelected = selected.value.has(label.name);
-              const bgColor = isSelected ? `#${label.color}25` : undefined;
-              const borderColor = `#${label.color}`;
-              const textColor = isSelected ? getContrastColor(label.color) : undefined;
 
               return (
                 <button
@@ -153,10 +132,6 @@ export function LabelSelector() {
                   onClick={() => toggleLabel(label.name)}
                   style={{
                     "--label-color": `#${label.color}`,
-                    "--label-bg": bgColor,
-                    "--label-text": textColor,
-                    borderLeftColor: borderColor,
-                    borderLeftWidth: "3px",
                   }}
                 >
                   {isSelected && <span class="label-check">✓</span>}
