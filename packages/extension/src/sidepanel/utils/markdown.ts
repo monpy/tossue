@@ -53,7 +53,9 @@ export function buildMarkdown(params: BuildMarkdownParams): string {
   ];
   pushSection(sections, "Browser Context", browserContextLines);
 
-  pushSection(sections, "Diagnostics", diagnostics);
+  if (issueOptions.includeActions) {
+    pushSection(sections, "Diagnostics", diagnostics);
+  }
 
   const screenshotCount = state.screenshots?.length ?? 0;
   const recordingCount = state.recordings?.length ?? 0;
