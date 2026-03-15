@@ -179,6 +179,107 @@
         color: var(--muted);
       }
 
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        resize: vertical;
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      textarea:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: -1px;
+      }
+
+      .info-box {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.5);
+        font-size: 13px;
+      }
+
+      .info-box h4 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .info-box pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 12px;
+        color: var(--text);
+      }
+
+      .test-result {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.5);
+        font-size: 13px;
+        min-height: 80px;
+      }
+
+      .test-result.success {
+        border-color: #0b7a75;
+        background: rgba(11, 122, 117, 0.08);
+      }
+
+      .test-result.error {
+        border-color: #bb5a1d;
+        background: rgba(187, 90, 29, 0.08);
+      }
+
+      .test-result h4 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+
+      .test-item {
+        margin-bottom: 8px;
+      }
+
+      .test-item.ok {
+        color: #0b7a75;
+      }
+
+      .test-item.fail {
+        color: #bb5a1d;
+      }
+
+      .preview-box {
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.6);
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+
       @media (max-width: 720px) {
         .toolbar {
           align-items: flex-start;
@@ -258,6 +359,51 @@
       <section class="stack">
         <h2>GitHub CLI</h2>
         <p class="muted">この helper から `gh auth status` を確認できます。ログインは Terminal を開いて <code>gh auth login --web</code> を実行します。</p>
+      </section>
+
+      <section class="stack">
+        <h2>Upload Script Settings</h2>
+        <p class="muted">画像・動画をアップロードするカスタムスクリプトを設定します。スクリプトは stdout に URL を出力してください。</p>
+
+        <textarea id="uploadScript" placeholder="#!/bin/bash
+curl -s -X POST &quot;https://example.com/upload&quot; \
+  -F &quot;file=@$TOSSUE_FILE_PATH&quot;"></textarea>
+
+        <div class="info-box">
+          <h4>Input (Environment Variables)</h4>
+          <pre>TOSSUE_FILE_PATH    Path to the file to upload
+TOSSUE_FILENAME     Original filename (e.g. screenshot-1.png)
+TOSSUE_MIME_TYPE    MIME type (e.g. image/png, video/webm)</pre>
+        </div>
+
+        <div class="info-box">
+          <h4>Expected Output</h4>
+          <pre>Print the uploaded file URL to stdout.
+Only the first line is used.
+
+Example: https://example.com/uploads/image.png</pre>
+        </div>
+
+        <div class="info-box">
+          <h4>Issue Body Preview</h4>
+          <pre>The URL will be embedded in the issue body as:
+
+## Attachments
+![screenshot-1.png](https://example.com/xxx.png)
+[recording-1.webm](https://example.com/xxx.webm)</pre>
+        </div>
+
+        <div id="testResult" class="test-result">
+          <h4>Test Result</h4>
+          <p class="muted">Click "Test Upload" to test with sample PNG and WebM files.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="testUploadBtn" class="secondary">Test Upload</button>
+          <button id="saveScriptBtn">Save</button>
+        </div>
+
+        <p id="uploadMessage" class="muted log"></p>
       </section>
     </main>
     <script>
@@ -380,6 +526,133 @@
 
       function setMessage(message) {
         nodes.actionMessage.textContent = message;
+      }
+
+      // Upload Script Section
+      const uploadNodes = {
+        script: document.querySelector("#uploadScript"),
+        testResult: document.querySelector("#testResult"),
+        testBtn: document.querySelector("#testUploadBtn"),
+        saveBtn: document.querySelector("#saveScriptBtn"),
+        message: document.querySelector("#uploadMessage")
+      };
+
+      uploadNodes.testBtn.addEventListener("click", testUploadScript);
+      uploadNodes.saveBtn.addEventListener("click", saveUploadScript);
+
+      loadUploadScript();
+
+      async function loadUploadScript() {
+        try {
+          const response = await helperGet("/upload/script");
+          uploadNodes.script.value = response.script || "";
+        } catch (error) {
+          setUploadMessage("Failed to load script: " + error.message);
+        }
+      }
+
+      async function saveUploadScript() {
+        setUploadMessage("Saving script...");
+        try {
+          await helperPut("/upload/script", { script: uploadNodes.script.value });
+          setUploadMessage("Script saved successfully.");
+        } catch (error) {
+          setUploadMessage("Failed to save: " + error.message);
+        }
+      }
+
+      async function testUploadScript() {
+        const script = uploadNodes.script.value.trim();
+        if (!script) {
+          setUploadMessage("Please enter a script first.");
+          return;
+        }
+
+        setUploadMessage("Testing upload script...");
+        uploadNodes.testBtn.disabled = true;
+        uploadNodes.testResult.className = "test-result";
+        uploadNodes.testResult.innerHTML = "<h4>Test Result</h4><p class='muted'>Running test...</p>";
+
+        try {
+          const result = await helperPostJson("/upload/test", { script });
+          renderTestResult(result);
+          setUploadMessage("");
+        } catch (error) {
+          uploadNodes.testResult.className = "test-result error";
+          uploadNodes.testResult.innerHTML = `<h4>Test Result</h4><p class="test-item fail">✗ Test failed: ${escapeHtml(error.message)}</p>`;
+          setUploadMessage("");
+        } finally {
+          uploadNodes.testBtn.disabled = false;
+        }
+      }
+
+      function renderTestResult(result) {
+        const allSuccess = result.png.success && result.webm.success;
+        uploadNodes.testResult.className = "test-result " + (allSuccess ? "success" : "error");
+
+        let html = "<h4>Test Result</h4>";
+
+        // PNG result
+        if (result.png.success) {
+          html += `<p class="test-item ok">✓ PNG upload successful</p>`;
+          html += `<p class="muted" style="margin-left: 16px; font-size: 12px; word-break: break-all;">URL: ${escapeHtml(result.png.url)}</p>`;
+        } else {
+          html += `<p class="test-item fail">✗ PNG upload failed</p>`;
+          html += `<p class="muted" style="margin-left: 16px; font-size: 12px;">Error: ${escapeHtml(result.png.error)}</p>`;
+        }
+
+        // WebM result
+        if (result.webm.success) {
+          html += `<p class="test-item ok" style="margin-top: 8px;">✓ WebM upload successful</p>`;
+          html += `<p class="muted" style="margin-left: 16px; font-size: 12px; word-break: break-all;">URL: ${escapeHtml(result.webm.url)}</p>`;
+        } else {
+          html += `<p class="test-item fail" style="margin-top: 8px;">✗ WebM upload failed</p>`;
+          html += `<p class="muted" style="margin-left: 16px; font-size: 12px;">Error: ${escapeHtml(result.webm.error)}</p>`;
+        }
+
+        // Preview
+        if (result.preview) {
+          html += `<div class="preview-box"><strong>Preview in issue body:</strong>\n${escapeHtml(result.preview)}</div>`;
+        }
+
+        uploadNodes.testResult.innerHTML = html;
+      }
+
+      function setUploadMessage(message) {
+        uploadNodes.message.textContent = message;
+      }
+
+      async function helperPut(path, body) {
+        const response = await fetch(`${baseUrl}${path}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || `Request failed: ${path}`);
+        }
+        return payload;
+      }
+
+      async function helperPostJson(path, body) {
+        const response = await fetch(`${baseUrl}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error || `Request failed: ${path}`);
+        }
+        return payload;
+      }
+
+      function escapeHtml(text) {
+        if (!text) return "";
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
       }
     </script>
   </body>

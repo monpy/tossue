@@ -20,6 +20,7 @@ tower-http = { version = "=0.5.2", features = ["cors"] }
 rand = "0.8"
 arboard = "3"
 dirs = "5"
+base64 = "0.22"
 
 [features]
 default = ["custom-protocol"]

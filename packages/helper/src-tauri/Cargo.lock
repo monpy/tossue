@@ -3916,6 +3916,7 @@ version = "0.1.0"
 dependencies = [
  "arboard",
  "axum",
+ "base64 0.22.1",
  "dirs 5.0.1",
  "rand 0.8.5",
  "serde",

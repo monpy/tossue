@@ -217,3 +217,29 @@ export async function fetchRepositoryLabels(repo: string): Promise<RepositoryLab
     isLoadingLabels.value = false;
   }
 }
+
+export async function uploadFileViaHelper(
+  filename: string,
+  mimeType: string,
+  dataUrl: string
+): Promise<string | null> {
+  try {
+    const response = await helperPost("/upload/file", {
+      filename,
+      mime_type: mimeType,
+      data: dataUrl,
+    });
+    return response.url || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function checkUploadScriptConfigured(): Promise<boolean> {
+  try {
+    const response = await helperGet("/upload/script");
+    return response.configured === true;
+  } catch {
+    return false;
+  }
+}

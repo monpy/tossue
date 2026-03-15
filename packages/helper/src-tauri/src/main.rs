@@ -139,6 +139,48 @@ struct TokenStatusResponse {
   token_preview: Option<String>,
 }
 
+// Upload script types
+#[derive(Deserialize)]
+struct UploadFileRequest {
+  filename: String,
+  mime_type: String,
+  data: String, // Base64 encoded
+}
+
+#[derive(Serialize)]
+struct UploadFileResponse {
+  url: String,
+}
+
+#[derive(Deserialize)]
+struct UploadTestRequest {
+  script: String,
+}
+
+#[derive(Serialize)]
+struct UploadTestResult {
+  success: bool,
+  url: Option<String>,
+  error: Option<String>,
+}
+
+#[derive(Serialize)]
+struct UploadTestResponse {
+  png: UploadTestResult,
+  webm: UploadTestResult,
+  preview: Option<String>,
+}
+
+#[derive(Serialize)]
+struct UploadScriptResponse {
+  script: String,
+  configured: bool,
+}
+
+#[derive(Deserialize)]
+struct SaveUploadScriptRequest {
+  script: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -180,6 +222,8 @@ async fn main() {
       let copy_token_item = MenuItem::with_id(app, "copy-token", "📋 Copy Token", true, None::<&str>)?;
       let rotate_token_item = MenuItem::with_id(app, "rotate-token", "🔄 Rotate Token", true, None::<&str>)?;
       let separator2 = PredefinedMenuItem::separator(app)?;
+      let upload_settings_item = MenuItem::with_id(app, "upload-settings", "📤 Upload Script Settings", true, None::<&str>)?;
+      let separator3 = PredefinedMenuItem::separator(app)?;
       let refresh_item = MenuItem::with_id(app, "refresh-status", "Refresh Status", true, None::<&str>)?;
       let login_item = MenuItem::with_id(app, "login-terminal", "Login in Terminal", true, None::<&str>)?;
       let quit_item = MenuItem::with_id(app, "quit-helper", "Quit Tossue Helper", true, None::<&str>)?;
@@ -195,6 +239,8 @@ async fn main() {
         &copy_token_item,
         &rotate_token_item,
         &separator2,
+        &upload_settings_item,
+        &separator3,
         &refresh_item,
         &login_item,
         &quit_item,
@@ -264,6 +310,12 @@ async fn main() {
               let _ = refresh_menu_state(&handle).await;
             });
           }
+          "upload-settings" => {
+            if let Some(window) = app.get_webview_window("main") {
+              let _ = window.show();
+              let _ = window.set_focus();
+            }
+          }
           "login-terminal" => {
             let handle = app.clone();
             tauri::async_runtime::spawn(async move {
@@ -330,12 +382,16 @@ async fn run_http_server(state: AppState) -> Result<(), String> {
     .route("/github/repositories", get(github_repositories))
     .route("/github/repos/:owner/:repo/labels", get(repository_labels))
     .route("/issues", post(create_issue))
+    .route("/upload/file", post(upload_file))
+    .route("/upload/test", post(upload_test))
+    .route("/upload/script", get(get_upload_script_handler))
+    .route("/upload/script", axum::routing::put(save_upload_script_handler))
     .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
     .with_state(state.clone());
 
   let cors = CorsLayer::new()
     .allow_origin("*".parse::<HeaderValue>().unwrap())
-    .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+    .allow_methods([Method::GET, Method::POST, Method::PUT, Method::OPTIONS])
     .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
 
   let router = Router::new()
@@ -493,6 +549,161 @@ async fn create_issue(
 
   let issue_url = result.map_err(bad_gateway_error)?;
   Ok(Json(CreateIssueResponse { issue_url }))
+}
+
+// Upload script endpoints
+
+async fn upload_file(
+  Json(payload): Json<UploadFileRequest>,
+) -> Result<Json<UploadFileResponse>, (StatusCode, Json<ErrorResponse>)> {
+  // Decode base64 data
+  let data = base64_decode(&payload.data).map_err(|e| {
+    (
+      StatusCode::BAD_REQUEST,
+      Json(ErrorResponse {
+        error: format!("Invalid base64 data: {e}"),
+      }),
+    )
+  })?;
+
+  // Write to temp file
+  let file_path = write_temp_upload_file(&payload.filename, &data)
+    .await
+    .map_err(internal_error)?;
+
+  // Run upload script
+  let result = run_upload_script(&file_path, &payload.filename, &payload.mime_type).await;
+
+  // Clean up temp file
+  let _ = tokio::fs::remove_file(&file_path).await;
+
+  let url = result.map_err(bad_gateway_error)?;
+  Ok(Json(UploadFileResponse { url }))
+}
+
+async fn upload_test(
+  Json(payload): Json<UploadTestRequest>,
+) -> Result<Json<UploadTestResponse>, (StatusCode, Json<ErrorResponse>)> {
+  // Sample PNG: 1x1 transparent pixel
+  let sample_png: &[u8] = &[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+    0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+    0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+    0x42, 0x60, 0x82,
+  ];
+
+  // Sample WebM: minimal valid WebM file header
+  let sample_webm: &[u8] = &[
+    0x1A, 0x45, 0xDF, 0xA3, 0x9F, 0x42, 0x86, 0x81, 0x01, 0x42, 0xF7, 0x81, 0x01, 0x42, 0xF2, 0x81,
+    0x04, 0x42, 0xF3, 0x81, 0x08, 0x42, 0x82, 0x84, 0x77, 0x65, 0x62, 0x6D, 0x42, 0x87, 0x81, 0x02,
+    0x42, 0x85, 0x81, 0x02,
+  ];
+
+  // Test PNG upload
+  let png_result = test_upload_with_script(&payload.script, sample_png, "test.png", "image/png").await;
+
+  // Test WebM upload (only if PNG succeeded)
+  let webm_result = if png_result.success {
+    test_upload_with_script(&payload.script, sample_webm, "test.webm", "video/webm").await
+  } else {
+    UploadTestResult {
+      success: false,
+      url: None,
+      error: Some("Skipped (PNG upload failed)".into()),
+    }
+  };
+
+  // Generate preview if both succeeded
+  let preview = if png_result.success && webm_result.success {
+    Some(format!(
+      "## Attachments\n![test.png]({})\n[test.webm]({})",
+      png_result.url.as_deref().unwrap_or(""),
+      webm_result.url.as_deref().unwrap_or("")
+    ))
+  } else {
+    None
+  };
+
+  Ok(Json(UploadTestResponse {
+    png: png_result,
+    webm: webm_result,
+    preview,
+  }))
+}
+
+async fn test_upload_with_script(
+  script: &str,
+  data: &[u8],
+  filename: &str,
+  mime_type: &str,
+) -> UploadTestResult {
+  // Write temp file
+  let file_path = match write_temp_upload_file(filename, data).await {
+    Ok(path) => path,
+    Err(e) => {
+      return UploadTestResult {
+        success: false,
+        url: None,
+        error: Some(e),
+      };
+    }
+  };
+
+  // Run script
+  let result = run_upload_script_with_content(script, &file_path, filename, mime_type).await;
+
+  // Clean up
+  let _ = tokio::fs::remove_file(&file_path).await;
+
+  match result {
+    Ok(url) => UploadTestResult {
+      success: true,
+      url: Some(url),
+      error: None,
+    },
+    Err(e) => UploadTestResult {
+      success: false,
+      url: None,
+      error: Some(e),
+    },
+  }
+}
+
+async fn get_upload_script_handler() -> Result<Json<UploadScriptResponse>, (StatusCode, Json<ErrorResponse>)> {
+  let script = load_upload_script().await.map_err(internal_error)?;
+  let configured = !script.trim().is_empty();
+  Ok(Json(UploadScriptResponse { script, configured }))
+}
+
+async fn save_upload_script_handler(
+  Json(payload): Json<SaveUploadScriptRequest>,
+) -> Result<Json<ActionResponse>, (StatusCode, Json<ErrorResponse>)> {
+  save_upload_script(&payload.script)
+    .await
+    .map_err(internal_error)?;
+
+  Ok(Json(ActionResponse {
+    ok: true,
+    message: "Upload script saved".into(),
+  }))
+}
+
+fn base64_decode(input: &str) -> Result<Vec<u8>, String> {
+  // Handle data URL format
+  let data = if input.starts_with("data:") {
+    input
+      .split(',')
+      .nth(1)
+      .ok_or("Invalid data URL format")?
+  } else {
+    input
+  };
+
+  use base64::Engine;
+  base64::engine::general_purpose::STANDARD
+    .decode(data)
+    .map_err(|e| format!("Base64 decode error: {e}"))
 }
 
 async fn run_gh_issue_create(payload: &CreateIssueRequest, body_file: &PathBuf) -> Result<String, String> {
@@ -828,6 +1039,147 @@ fn ensure_install_item_hidden<R: tauri::Runtime>(menu_state: &MenuState<R>) -> t
   };
 
   menu_state.tray_menu.remove_at(position).map(|_| ())
+}
+
+// Upload script management functions
+
+fn get_upload_script_path() -> PathBuf {
+  let config_dir = dirs::config_dir()
+    .or_else(dirs::home_dir)
+    .unwrap_or_else(|| PathBuf::from("."));
+  config_dir.join("tossue").join("upload-script")
+}
+
+async fn load_upload_script() -> Result<String, String> {
+  let path = get_upload_script_path();
+  match tokio::fs::read_to_string(&path).await {
+    Ok(script) => Ok(script),
+    Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+    Err(e) => Err(format!("failed to read upload script: {e}")),
+  }
+}
+
+async fn save_upload_script(script: &str) -> Result<(), String> {
+  let path = get_upload_script_path();
+
+  // Ensure parent directory exists
+  if let Some(parent) = path.parent() {
+    tokio::fs::create_dir_all(parent)
+      .await
+      .map_err(|e| format!("failed to create config directory: {e}"))?;
+  }
+
+  tokio::fs::write(&path, script)
+    .await
+    .map_err(|e| format!("failed to write upload script: {e}"))?;
+
+  // Set file permissions to owner-only (Unix)
+  #[cfg(unix)]
+  {
+    use std::os::unix::fs::PermissionsExt;
+    let permissions = std::fs::Permissions::from_mode(0o600);
+    let _ = std::fs::set_permissions(&path, permissions);
+  }
+
+  Ok(())
+}
+
+async fn write_temp_script(script: &str) -> Result<PathBuf, String> {
+  let mut path = env::temp_dir();
+  path.push(format!("tossue-upload-script-{}", unique_suffix()));
+  tokio::fs::write(&path, script)
+    .await
+    .map_err(|e| format!("failed to write temporary script: {e}"))?;
+
+  // Set executable permission (Unix)
+  #[cfg(unix)]
+  {
+    use std::os::unix::fs::PermissionsExt;
+    let permissions = std::fs::Permissions::from_mode(0o700);
+    std::fs::set_permissions(&path, permissions)
+      .map_err(|e| format!("failed to set script permissions: {e}"))?;
+  }
+
+  Ok(path)
+}
+
+async fn write_temp_upload_file(filename: &str, data: &[u8]) -> Result<PathBuf, String> {
+  let mut path = env::temp_dir();
+  let extension = std::path::Path::new(filename)
+    .extension()
+    .and_then(|e| e.to_str())
+    .unwrap_or("");
+  let temp_filename = if extension.is_empty() {
+    format!("tossue-upload-{}", unique_suffix())
+  } else {
+    format!("tossue-upload-{}.{}", unique_suffix(), extension)
+  };
+  path.push(temp_filename);
+
+  tokio::fs::write(&path, data)
+    .await
+    .map_err(|e| format!("failed to write temporary upload file: {e}"))?;
+
+  Ok(path)
+}
+
+async fn run_upload_script_with_content(
+  script: &str,
+  file_path: &std::path::Path,
+  filename: &str,
+  mime_type: &str,
+) -> Result<String, String> {
+  if script.trim().is_empty() {
+    return Err("Upload script is not configured".into());
+  }
+
+  // Write script to temp file
+  let script_path = write_temp_script(script).await?;
+
+  // Run script with timeout
+  let output = tokio::time::timeout(
+    Duration::from_secs(60),
+    Command::new(&script_path)
+      .env("TOSSUE_FILE_PATH", file_path)
+      .env("TOSSUE_FILENAME", filename)
+      .env("TOSSUE_MIME_TYPE", mime_type)
+      .stdout(Stdio::piped())
+      .stderr(Stdio::piped())
+      .output(),
+  )
+  .await
+  .map_err(|_| "Upload script timed out after 60 seconds".to_string())?
+  .map_err(|e| format!("failed to run upload script: {e}"))?;
+
+  // Clean up script file
+  let _ = tokio::fs::remove_file(&script_path).await;
+
+  if !output.status.success() {
+    return Err(format!(
+      "Script exited with code {}: {}",
+      output.status.code().unwrap_or(-1),
+      stderr_text(&output.stderr)
+    ));
+  }
+
+  // Get first line of stdout as URL
+  let url = String::from_utf8_lossy(&output.stdout)
+    .lines()
+    .next()
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
+    .ok_or("Upload script produced no output")?;
+
+  Ok(url)
+}
+
+async fn run_upload_script(
+  file_path: &std::path::Path,
+  filename: &str,
+  mime_type: &str,
+) -> Result<String, String> {
+  let script = load_upload_script().await?;
+  run_upload_script_with_content(&script, file_path, filename, mime_type).await
 }
 
 // Token management functions
