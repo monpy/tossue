@@ -27,8 +27,8 @@ const sizeClasses = {
 } as const;
 
 const iconSizeClasses = {
-  md: "w-7 h-7 p-0 text-[15px]",
-  sm: "w-5.5 h-5.5 p-0 text-[13px]",
+  md: "w-7 h-7 p-0 text-[15px] flex items-center justify-center shrink-0",
+  sm: "w-5.5 h-5.5 p-0 text-[13px] flex items-center justify-center shrink-0",
 } as const;
 
 export function Button({
