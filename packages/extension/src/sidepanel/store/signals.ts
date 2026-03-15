@@ -8,6 +8,7 @@ import type {
   UserAction,
   ConsoleEntry,
   NetworkEntry,
+  RepositoryLabel,
 } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
 
@@ -64,6 +65,8 @@ export const issueOptions = signal<IssueOptions>({
 
 export const labelPresets = signal<string[]>([...DEFAULT_LABEL_PRESETS]);
 export const selectedLabels = signal<Set<string>>(new Set());
+export const repositoryLabels = signal<RepositoryLabel[]>([]);
+export const isLoadingLabels = signal<boolean>(false);
 export const statusMessage = signal<string>("");
 export const captureStatusMessage = signal<string>("");
 

@@ -232,6 +232,159 @@ interface MediaGridProps {
 />
 ```
 
+## LabelSelector コンポーネント
+
+ラベル選択UIを提供するコンポーネント。リポジトリから取得したラベルとカスタムラベルの両方をサポートする。
+
+### 概要
+
+- リポジトリ未選択時はラベル選択を無効化し、リポジトリ選択を促す
+- リポジトリ選択後は、そのリポジトリのラベル一覧を取得して選択肢として表示
+- カスタムラベルも追加可能
+
+### データ構造
+
+```typescript
+type RepositoryLabel = {
+  name: string;
+  color: string;       // 6桁の16進数カラーコード（# なし）
+  description?: string;
+};
+```
+
+### 状態管理
+
+```typescript
+// リポジトリから取得したラベル一覧
+const repositoryLabels = signal<RepositoryLabel[]>([]);
+
+// 選択中のラベル名
+const selectedLabels = signal<Set<string>>(new Set());
+
+// ラベル取得中フラグ
+const isLoadingLabels = signal<boolean>(false);
+```
+
+### UI 状態
+
+| 状態 | 表示内容 |
+|-----|---------|
+| リポジトリ未選択 | 「Select a repository first」メッセージを表示、ラベルチップは非表示 |
+| ラベル取得中 | ローディング表示 |
+| ラベル取得完了 | リポジトリラベル一覧 + カスタムラベル入力欄を表示 |
+| ラベル取得失敗 | エラーメッセージ + カスタムラベル入力欄のみ表示 |
+
+### LabelChip コンポーネント
+
+ラベルを表示するチップコンポーネント。
+
+#### バリアント
+
+| 状態 | スタイル |
+|-----|---------|
+| 未選択 | 白背景、ラベル色の左ボーダー |
+| 選択中 | ラベル色の背景（透明度付き）、チェックマーク表示 |
+
+#### UnoCSS クラス
+
+```
+// 共通
+inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border cursor-pointer text-sm font-medium transition-colors
+
+// 未選択
+bg-surface border-border
+
+// 選択中
+border-transparent
+```
+
+#### 動的スタイル
+
+ラベルの色は GitHub から取得した `color` を使用：
+
+```tsx
+// 未選択時：左ボーダーにラベル色
+style={{ borderLeftColor: `#${label.color}`, borderLeftWidth: '3px' }}
+
+// 選択時：背景にラベル色（透明度付き）
+style={{ backgroundColor: `#${label.color}20`, color: getContrastColor(label.color) }}
+```
+
+#### チェックマーク
+
+選択中のラベルには先頭にチェックマーク（✓）を表示：
+
+```tsx
+{selected && <span class="text-xs">✓</span>}
+<span>{label.name}</span>
+```
+
+### カスタムラベル追加
+
+リポジトリに存在しないラベルを追加できる。
+
+#### UI構成
+
+```tsx
+<div class="flex gap-2">
+  <input
+    type="text"
+    placeholder="Add custom label..."
+    class="flex-1 px-3 py-1.5 rounded-full border border-border bg-surface text-sm"
+  />
+  <Button variant="secondary" size="sm" disabled={!inputValue}>
+    Add
+  </Button>
+</div>
+```
+
+#### 動作
+
+1. 入力欄にラベル名を入力
+2. 「Add」ボタンをクリック または Enter キーで追加
+3. 追加されたラベルは自動的に選択状態になる
+4. カスタムラベルはグレー色（`#666666`）で表示
+
+### Props
+
+```typescript
+interface LabelSelectorProps {
+  repo: string;  // 選択中のリポジトリ（owner/repo 形式）
+}
+```
+
+### 使用例
+
+```tsx
+<LabelSelector repo={currentRepo} />
+```
+
+### リポジトリラベル取得
+
+リポジトリが選択されたタイミングで、Helper API 経由でラベル一覧を取得する。
+
+#### API エンドポイント
+
+```
+GET /github/repos/:owner/:repo/labels
+```
+
+#### レスポンス
+
+```json
+{
+  "labels": [
+    { "name": "bug", "color": "d73a4a", "description": "Something isn't working" },
+    { "name": "enhancement", "color": "a2eeef", "description": "New feature or request" }
+  ]
+}
+```
+
+#### エラーハンドリング
+
+- Helper 未接続時：カスタムラベルのみ利用可能
+- API エラー時：エラーメッセージ表示 + カスタムラベルのみ利用可能
+
 ## CSS 削除対象
 
 コンポーネント移行後、`global.css` から以下のスタイルを削除する：
@@ -242,3 +395,4 @@ interface MediaGridProps {
 - `button:disabled`（479-482行目）
 - `.card`（81-89行目）
 - `.capture-tool-card`（192-199行目）
+- `.label-chip` 関連スタイル（374-410行目）

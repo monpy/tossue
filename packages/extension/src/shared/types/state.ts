@@ -112,6 +112,12 @@ export type HelperRepository = {
   name_with_owner: string;
 };
 
+export type RepositoryLabel = {
+  name: string;
+  color: string;
+  description?: string;
+};
+
 export type HelperState = {
   reachable: boolean;
   health: HelperHealth | null;

@@ -374,39 +374,50 @@ label span {
 .label-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
+  gap: 4px;
+  padding: 4px 10px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  font-size: 11px;
+  transition: background-color 0.15s;
+  text-decoration: underline;
+  text-decoration-color: var(--label-color, var(--muted));
+  text-underline-offset: 2px;
 }
 
 .label-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: var(--surface-strong);
+  border-color: var(--border);
+  color: var(--text);
+  text-decoration-thickness: 2px;
+}
+
+.label-check {
+  font-size: 9px;
+  font-weight: 700;
 }
 
 .label-chip-remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   border: 0;
   padding: 0;
   background: rgba(27, 26, 23, 0.12);
   color: inherit;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
 }
 
 .label-chip.active .label-chip-remove {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .label-add-row {

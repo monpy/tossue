@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::Stdio;
 
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
@@ -99,6 +99,25 @@ struct ApiRepo {
   full_name: String,
   private: bool,
   html_url: String,
+}
+
+#[derive(Serialize)]
+struct LabelRecord {
+  name: String,
+  color: String,
+  description: Option<String>,
+}
+
+#[derive(Serialize)]
+struct RepositoryLabelsResponse {
+  labels: Vec<LabelRecord>,
+}
+
+#[derive(Deserialize)]
+struct ApiLabel {
+  name: String,
+  color: String,
+  description: Option<String>,
 }
 
 #[tokio::main]
@@ -229,6 +248,7 @@ async fn run_http_server(state: AppState) -> Result<(), String> {
     .route("/github/status", get(github_status))
     .route("/github/login", post(github_login))
     .route("/github/repositories", get(github_repositories))
+    .route("/github/repos/:owner/:repo/labels", get(repository_labels))
     .route("/issues", post(create_issue))
     .layer(CorsLayer::very_permissive())
     .with_state(state.clone());
@@ -268,6 +288,25 @@ async fn github_repositories() -> Result<Json<RepositoryListResponse>, (StatusCo
         name_with_owner: repo.full_name,
         private: repo.private,
         url: repo.html_url,
+      })
+      .collect(),
+  }))
+}
+
+async fn repository_labels(
+  Path((owner, repo)): Path<(String, String)>,
+) -> Result<Json<RepositoryLabelsResponse>, (StatusCode, Json<ErrorResponse>)> {
+  let endpoint = format!("repos/{owner}/{repo}/labels?per_page=100");
+  let value = gh_api_json(&[&endpoint]).await.map_err(bad_gateway_error)?;
+  let api_labels: Vec<ApiLabel> = serde_json::from_value(value).map_err(internal_error)?;
+
+  Ok(Json(RepositoryLabelsResponse {
+    labels: api_labels
+      .into_iter()
+      .map(|label| LabelRecord {
+        name: label.name,
+        color: label.color,
+        description: label.description,
       })
       .collect(),
   }))
