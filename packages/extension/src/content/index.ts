@@ -6,7 +6,8 @@ const overlayState = {
   captureBox: null,
   previewOutline: null,
   toast: null,
-  dragStart: null
+  dragStart: null,
+  hoverLabel: null
 };
 
 const recentActions = [];
@@ -36,8 +37,46 @@ function installPageContextCapture() {
       safeSendMessage({ type: "CONSOLE_EVENT", payload });
     } else if (type === "network") {
       safeSendMessage({ type: "NETWORK_EVENT", payload });
+    } else if (type === "vue_component") {
+      // Cache Vue component info on elements
+      handleVueComponentResult(payload);
     }
   }) as EventListener);
+}
+
+// Pending Vue component detection requests
+const pendingVueRequests = new Map();
+
+function requestVueComponentInfo(element, selector) {
+  // Request Vue component info from page context
+  window.dispatchEvent(new CustomEvent("__tossue_get_vue_component__", {
+    detail: { selector }
+  }));
+
+  // Store a promise that will be resolved when we get the result
+  return new Promise((resolve) => {
+    pendingVueRequests.set(selector, { element, resolve });
+    // Timeout after 100ms
+    setTimeout(() => {
+      if (pendingVueRequests.has(selector)) {
+        pendingVueRequests.delete(selector);
+        resolve(null);
+      }
+    }, 100);
+  });
+}
+
+function handleVueComponentResult(payload) {
+  const { selector, component } = payload;
+  const pending = pendingVueRequests.get(selector);
+  if (pending) {
+    pendingVueRequests.delete(selector);
+    // Cache the result on the element
+    if (pending.element) {
+      pending.element.__tossue_vue_info__ = component;
+    }
+    pending.resolve(component);
+  }
 }
 
 function installMessageListener() {
@@ -203,6 +242,8 @@ function stopAreaPicker() {
   overlayState.outline = null;
   overlayState.captureBox?.remove();
   overlayState.captureBox = null;
+  overlayState.hoverLabel?.remove();
+  overlayState.hoverLabel = null;
 }
 
 function handlePointerMove(event) {
@@ -376,6 +417,91 @@ function paintOutline(element) {
   overlayState.outline.style.top = `${rect.top}px`;
   overlayState.outline.style.width = `${rect.width}px`;
   overlayState.outline.style.height = `${rect.height}px`;
+
+  // Request Vue component info for this element (will be cached)
+  const selector = buildSelector(element);
+  if (selector && !element.__tossue_vue_info__) {
+    requestVueComponentInfo(element, selector).then((info) => {
+      // Update hover label if still hovering the same element
+      if (overlayState.hoveredElement === element && info) {
+        paintHoverLabel(element, rect);
+      }
+    });
+  }
+
+  // Show component label on hover (like Nuxt DevTools)
+  paintHoverLabel(element, rect);
+}
+
+function paintHoverLabel(element, rect) {
+  // Create hover label if not exists
+  if (!overlayState.hoverLabel) {
+    overlayState.hoverLabel = createHoverLabel();
+    document.documentElement.appendChild(overlayState.hoverLabel);
+  }
+
+  // Get component info
+  const framework = detectFrameworkInfo(element);
+  const tagName = element.tagName.toLowerCase();
+
+  let labelText = "";
+  let hasComponent = false;
+
+  if (framework?.selectedComponent && framework.framework !== "DOM") {
+    labelText = `<${tagName}> ${framework.selectedComponent}`;
+    if (framework.filePath) {
+      labelText += `:${framework.filePath.split(":").slice(1).join(":")}`;
+    }
+    hasComponent = true;
+  } else {
+    // DOM fallback
+    const id = element.id ? `#${element.id}` : "";
+    const classes = element.classList.length > 0 ? `.${Array.from(element.classList).slice(0, 2).join(".")}` : "";
+    labelText = `<${tagName}>${id}${classes}`;
+  }
+
+  // Position label at bottom-left of element
+  const label = overlayState.hoverLabel;
+  label.textContent = labelText;
+  label.style.display = "block";
+
+  // Style based on whether it's a component
+  if (hasComponent) {
+    label.style.background = "rgba(16, 185, 129, 0.95)";
+  } else {
+    label.style.background = "rgba(59, 130, 246, 0.95)";
+  }
+
+  // Position: prefer bottom-left, but adjust if off-screen
+  let left = rect.left;
+  let top = rect.bottom + 4;
+
+  // Adjust if label would be off-screen
+  if (top + 28 > window.innerHeight) {
+    top = rect.top - 28;
+  }
+  if (left < 4) {
+    left = 4;
+  }
+
+  label.style.left = `${left}px`;
+  label.style.top = `${top}px`;
+}
+
+function createHoverLabel() {
+  const label = document.createElement("div");
+  label.style.position = "fixed";
+  label.style.zIndex = "2147483647";
+  label.style.padding = "4px 8px";
+  label.style.borderRadius = "4px";
+  label.style.background = "rgba(16, 185, 129, 0.95)";
+  label.style.color = "#fff";
+  label.style.font = '600 12px "SF Mono", "Monaco", monospace';
+  label.style.whiteSpace = "nowrap";
+  label.style.pointerEvents = "none";
+  label.style.display = "none";
+  label.style.boxShadow = "0 2px 8px rgba(0,0,0,0.2)";
+  return label;
 }
 
 function flashSelectionFeedback(element) {
@@ -623,9 +749,10 @@ function detectFrameworkInfo(element) {
     return reactInfo;
   }
 
-  const vueInfo = detectVueInfo(element);
-  if (vueInfo) {
-    return vueInfo;
+  // Check cached Vue info first (set by injected script)
+  const cachedVue = element.__tossue_vue_info__;
+  if (cachedVue) {
+    return cachedVue;
   }
 
   return null;
@@ -689,25 +816,6 @@ function getReactComponentName(fiber) {
   return type.displayName || type.name || "";
 }
 
-function detectVueInfo(element) {
-  let current = element;
-
-  while (current) {
-    const instance = current.__vueParentComponent || current.__vue_app__?._instance || null;
-    if (instance) {
-      const trail = buildVueComponentTrail(instance).filter(Boolean);
-      return {
-        framework: "Vue",
-        selectedComponent: trail[0] || "",
-        componentTrail: trail.slice(0, 6)
-      };
-    }
-
-    current = current.parentElement;
-  }
-
-  return null;
-}
 
 function detectDomTreeInfo(element) {
   const trail = buildDomComponentTrail(element);
@@ -755,34 +863,6 @@ function describeDomNode(element) {
   }
 
   return tag;
-}
-
-function buildVueComponentTrail(instance) {
-  const trail = [];
-  let current = instance;
-
-  while (current && trail.length < 6) {
-    const name = getVueComponentName(current);
-    if (name && !trail.includes(name)) {
-      trail.push(name);
-    }
-    current = current.parent;
-  }
-
-  return trail;
-}
-
-function getVueComponentName(instance) {
-  const type = instance.type || instance.vnode?.type;
-  if (!type) {
-    return "";
-  }
-
-  if (typeof type === "string") {
-    return type;
-  }
-
-  return type.name || type.__name || instance.proxy?.$options?.name || "";
 }
 
 function buildSelector(element) {

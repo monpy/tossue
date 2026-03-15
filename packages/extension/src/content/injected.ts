@@ -135,4 +135,108 @@
       at: new Date().toISOString(),
     });
   });
+
+  // Vue component detection - runs in page context where Vue internals are accessible
+  window.addEventListener("__tossue_get_vue_component__", ((event: CustomEvent) => {
+    const { selector } = event.detail || {};
+    if (!selector) return;
+
+    try {
+      const element = document.querySelector(selector);
+      if (!element) {
+        emit("vue_component", { selector, component: null });
+        return;
+      }
+
+      const info = getVueComponentInfo(element);
+      emit("vue_component", { selector, component: info });
+    } catch (e) {
+      emit("vue_component", { selector, component: null, error: String(e) });
+    }
+  }) as EventListener);
+
+  function getVueComponentInfo(element: Element): { framework: string; selectedComponent: string; componentTrail: string[]; filePath?: string } | null {
+    // Try to find Vue instance on element or ancestors
+    let current: Element | null = element;
+
+    while (current && current !== document.body) {
+      // Check for Vue 3 internal properties
+      const instance = findVue3Instance(current);
+      if (instance) {
+        const trail = buildVue3Trail(instance);
+        if (trail.length > 0) {
+          return {
+            framework: "Vue",
+            selectedComponent: trail[0],
+            componentTrail: trail.slice(0, 6),
+          };
+        }
+      }
+      current = current.parentElement;
+    }
+
+    return null;
+  }
+
+  function findVue3Instance(element: Element): unknown {
+    const el = element as Element & {
+      __vueParentComponent?: unknown;
+      __vue_app__?: { _instance?: unknown };
+      [key: string]: unknown;
+    };
+
+    // Vue 3: __vueParentComponent
+    if (el.__vueParentComponent) {
+      return el.__vueParentComponent;
+    }
+
+    // Vue 3 app root
+    if (el.__vue_app__?._instance) {
+      return el.__vue_app__._instance;
+    }
+
+    // Check for __vnode or other Vue 3 properties
+    try {
+      for (const key of Object.keys(el)) {
+        if (key.startsWith("__vnode")) {
+          const vnode = el[key] as { component?: unknown };
+          if (vnode?.component) {
+            return vnode.component;
+          }
+        }
+        if (key.startsWith("__vue") && key !== "__vue_app__") {
+          const value = el[key] as { type?: unknown; proxy?: unknown };
+          if (value && typeof value === "object" && (value.type || value.proxy)) {
+            return value;
+          }
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
+    return null;
+  }
+
+  function buildVue3Trail(instance: unknown): string[] {
+    const trail: string[] = [];
+    let current = instance as { type?: { name?: string; __name?: string }; parent?: unknown; proxy?: { $options?: { name?: string } } } | null;
+
+    while (current && trail.length < 6) {
+      const name = getVue3ComponentName(current);
+      if (name && !trail.includes(name)) {
+        trail.push(name);
+      }
+      current = current.parent as typeof current;
+    }
+
+    return trail;
+  }
+
+  function getVue3ComponentName(instance: { type?: { name?: string; __name?: string; displayName?: string }; proxy?: { $options?: { name?: string } } }): string {
+    const type = instance.type;
+    if (!type) return "";
+    if (typeof type === "string") return type;
+    return type.name || type.__name || type.displayName || instance.proxy?.$options?.name || "";
+  }
 })();
