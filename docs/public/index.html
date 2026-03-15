@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tossue - AI-ready Issue Composer</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --surface: #fffcf6;
+      --border: #d7c9af;
+      --text: #1b1a17;
+      --muted: #5b564d;
+      --accent: #bb5a1d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "IBM Plex Sans", "Avenir Next", -apple-system, sans-serif;
+      background: linear-gradient(180deg, #f6f1e8 0%, #efe6d7 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: "Iowan Old Style", Georgia, serif;
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .tagline {
+      font-size: 20px;
+      color: var(--muted);
+      max-width: 600px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .features {
+      display: grid;
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .feature h3 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--accent);
+    }
+
+    .feature p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .cta {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 14px 28px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .button:hover {
+      opacity: 0.9;
+    }
+
+    .button-secondary {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text);
+      margin-left: 12px;
+    }
+
+    .button-secondary:hover {
+      background: var(--surface);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding-top: 40px;
+      border-top: 1px solid var(--border);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 36px;
+      }
+
+      .tagline {
+        font-size: 18px;
+      }
+
+      .button {
+        display: block;
+        margin-bottom: 12px;
+      }
+
+      .button-secondary {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <p class="eyebrow">AI-ready Issue Composer</p>
+      <h1>Tossue</h1>
+      <p class="tagline">
+        Collect structured debugging context from your browser and draft GitHub issues
+        that both humans and AI can understand.
+      </p>
+    </header>
+
+    <section class="features">
+      <div class="feature">
+        <h3>Structured Context Collection</h3>
+        <p>
+          Automatically capture user actions, console errors, network failures,
+          and page context. Select specific DOM elements to pinpoint issues.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>Framework-Aware Detection</h3>
+        <p>
+          Detect React and Vue component hierarchies. Get component trails
+          that help developers locate issues in the source code.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>Multiple Creation Modes</h3>
+        <p>
+          Create issues via GitHub API (OAuth), local Helper (gh CLI),
+          or simply copy Markdown to clipboard. Choose what works for your workflow.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>Visual Attachments</h3>
+        <p>
+          Capture screenshots and screen recordings. Attachments are
+          automatically downloaded when issues are created.
+        </p>
+      </div>
+    </section>
+
+    <section class="cta">
+      <a href="https://github.com/monpy/tossue" class="button">View on GitHub</a>
+      <a href="https://github.com/monpy/tossue/releases" class="button button-secondary">Download</a>
+    </section>
+
+    <footer>
+      <p>
+        Built with care by <a href="https://github.com/monpy">@monpy</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

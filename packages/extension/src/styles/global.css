@@ -16,10 +16,12 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   color: var(--text);
   background:
     radial-gradient(circle at top right, rgba(187, 90, 29, 0.16), transparent 22rem),
     linear-gradient(180deg, #f6f1e8 0%, #efe6d7 100%);
+  background-attachment: fixed;
   font-family: "IBM Plex Sans", "Avenir Next", sans-serif;
 }
 
@@ -38,6 +40,7 @@ textarea {
   display: grid;
   gap: 12px;
   padding: 12px;
+  overflow-x: hidden;
 }
 
 .devtools-shell {
@@ -606,5 +609,204 @@ textarea {
 
 .hidden {
   display: none;
+}
+
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0 -12px;
+  padding: 0 12px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab-button:hover {
+  color: var(--text);
+}
+
+.tab-button--active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Settings */
+
+.mode-selector {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-option-wrapper {
+  display: grid;
+  gap: 0;
+}
+
+.mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.mode-option-wrapper:has(.mode-option.selected) .mode-option {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.mode-option:hover {
+  background: var(--surface-strong);
+}
+
+.mode-option.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.mode-option-details {
+  padding: 12px;
+  border: 1px solid var(--accent);
+  border-top: none;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background: var(--surface);
+}
+
+.mode-details-content {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-option input[type="radio"] {
+  width: auto;
+  margin: 2px 0 0 0;
+  flex-shrink: 0;
+}
+
+.mode-option-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mode-option-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+
+.settings-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.settings-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.settings-status-dot.ok {
+  background: #2b8a3e;
+}
+
+.settings-status-dot.warn {
+  background: #d97706;
+}
+
+.oauth-connect-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.oauth-connect-btn:hover {
+  background: var(--surface-strong);
+}
+
+.oauth-connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.oauth-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.oauth-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.oauth-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.oauth-username {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.oauth-status-text {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.oauth-disconnect-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.oauth-disconnect-btn:hover {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: #dc2626;
+  color: #dc2626;
 }
 

@@ -7,6 +7,7 @@
     "activeTab",
     "debugger",
     "downloads",
+    "identity",
     "scripting",
     "storage",
     "tabs",
@@ -14,8 +15,13 @@
   ],
   "host_permissions": [
     "<all_urls>",
-    "http://127.0.0.1:47321/*"
+    "http://127.0.0.1:47321/*",
+    "https://api.github.com/*"
   ],
+  "oauth2": {
+    "client_id": "Ov23lijpKUqzLGK1HMCo",
+    "scopes": ["repo"]
+  },
   "background": {
     "service_worker": "src/background/index.ts",
     "type": "module"
@@ -29,24 +35,15 @@
   "devtools_page": "src/devtools/index.html",
   "content_scripts": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content/index.ts"
-      ],
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "src/styles/global.css",
-        "src/content/injected.js"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "resources": ["src/styles/global.css", "src/content/injected.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

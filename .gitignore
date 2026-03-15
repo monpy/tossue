@@ -40,3 +40,6 @@ helper/src-tauri/target/
 
 skills-lock.json
 .agents
+
+# Custom API demo received files
+packages/custom-api-demo/received/

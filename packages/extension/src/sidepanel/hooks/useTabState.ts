@@ -166,3 +166,37 @@ export async function saveIssueOptions() {
     [ISSUE_OPTIONS_STORAGE_KEY]: issueOptions.value,
   });
 }
+
+export async function resetStateAfterCreate() {
+  // Clear background state
+  await chrome.runtime.sendMessage({
+    type: "RESET_STATE",
+    tabId: activeTabId.value,
+  });
+
+  // Clear local state
+  currentState.value = {
+    ...currentState.value,
+    draft: {
+      repo: currentState.value.draft.repo, // Keep repo selection
+      summary: "",
+      currentBehavior: "",
+      expectedBehavior: "",
+      labels: [],
+    },
+    screenshots: [],
+    recordings: [],
+    consoleEntries: [],
+    networkEntries: [],
+    selectedArea: null,
+    captureRect: null,
+    actions: [],
+  };
+
+  // Clear selected labels
+  selectedLabels.value = new Set();
+
+  // Reset button states
+  selectAreaButtonText.value = "Select Area";
+  captureButtonText.value = "Start Capture";
+}

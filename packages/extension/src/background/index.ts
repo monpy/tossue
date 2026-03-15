@@ -133,6 +133,9 @@ async function handleMessage(
       return {};
     case "GET_DEVTOOLS_STATUS":
       return { devtoolsStatus: getDevtoolsStatus(tabId) };
+    case "RESET_STATE":
+      resetState(tabId);
+      return await respondWithState(tabId);
     default:
       throw new Error(`Unsupported message type: ${message.type}`);
   }
@@ -196,6 +199,19 @@ function updateState(tabId: number | undefined, patch: Partial<TabState>): void 
   if (!tabId) return;
   const current = getOrCreateState(tabId);
   tabState.set(tabId, { ...current, ...patch });
+}
+
+function resetState(tabId: number | undefined): void {
+  if (!tabId) return;
+  const current = getOrCreateState(tabId);
+  // Keep repo selection, reset everything else
+  tabState.set(tabId, {
+    ...createEmptyState(),
+    draft: {
+      ...createEmptyState().draft,
+      repo: current.draft.repo,
+    },
+  });
 }
 
 function pushItem<K extends "consoleEntries" | "networkEntries">(

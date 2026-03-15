@@ -1,0 +1,9 @@
+name = "tossue-oauth"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+GITHUB_CLIENT_ID = "Ov23lijpKUqzLGK1HMCo"
+
+# Client Secret は wrangler secret で設定
+# wrangler secret put GITHUB_CLIENT_SECRET

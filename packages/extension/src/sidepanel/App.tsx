@@ -2,20 +2,19 @@ import { useTabState, refreshState } from "./hooks/useTabState";
 import { useRecording } from "./hooks/useRecording";
 import { useCapture } from "./hooks/useCapture";
 import { useDevtoolsStatus } from "./hooks/useDevtoolsStatus";
-import { Button, Card } from "./components/ui";
-import { HelperStatus } from "./components/HelperStatus";
-import { DevToolsStatus } from "./components/DevToolsStatus";
-import { ReportForm } from "./components/ReportForm";
-import { CaptureTools } from "./components/CaptureTools";
-import { ActionTimeline } from "./components/ActionTimeline";
-import { MarkdownPreview } from "./components/MarkdownPreview";
-import { IssueCreator } from "./components/IssueCreator";
+import { useSettings } from "./hooks/useSettings";
+import { Button } from "./components/ui";
+import { TabBar } from "./components/tabs/TabBar";
+import { MainTab } from "./components/MainTab";
+import { SettingsTab } from "./components/SettingsTab";
+import { activeSidepanelTab } from "./store/signals";
 
 export function App() {
   useTabState();
   useRecording();
   useCapture();
   useDevtoolsStatus();
+  useSettings();
 
   return (
     <main class="app-shell">
@@ -29,16 +28,10 @@ export function App() {
         </Button>
       </header>
 
-      <Card class="grid">
-        <HelperStatus />
-        <DevToolsStatus />
-      </Card>
+      <TabBar />
 
-      <ReportForm />
-      <CaptureTools />
-      <ActionTimeline />
-      <MarkdownPreview />
-      <IssueCreator />
+      {activeSidepanelTab.value === "main" && <MainTab />}
+      {activeSidepanelTab.value === "settings" && <SettingsTab />}
     </main>
   );
 }

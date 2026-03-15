@@ -9,7 +9,11 @@ import type {
   ConsoleEntry,
   NetworkEntry,
   RepositoryLabel,
+  IssueCreationSettings,
+  GitHubOAuthState,
+  GitHubOAuthRepository,
 } from "../../shared/types";
+import { DEFAULT_ISSUE_CREATION_SETTINGS } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
 
 export type TimelineEntry =
@@ -169,3 +173,107 @@ export const unifiedTimeline = computed<TimelineEntry[]>(() => {
 export const hasTimelineEntries = computed(
   () => unifiedTimeline.value.length > 0
 );
+
+// Settings signals
+export const issueCreationSettings = signal<IssueCreationSettings>({
+  ...DEFAULT_ISSUE_CREATION_SETTINGS,
+});
+
+export const githubOAuthState = signal<GitHubOAuthState>({});
+
+export const oauthRepositories = signal<GitHubOAuthRepository[]>([]);
+export const isLoadingOAuthRepos = signal<boolean>(false);
+
+// Active tab in sidepanel
+export type SidepanelTab = "main" | "settings";
+export const activeSidepanelTab = signal<SidepanelTab>("main");
+
+// Computed: can create issue based on current mode
+export const canCreateIssueWithCurrentMode = computed(() => {
+  const method = issueCreationSettings.value.createMethod;
+  const customApi = issueCreationSettings.value.customApi;
+
+  // Custom API only mode は常に有効
+  if (customApi.enabled && customApi.skipBuiltinCreate) {
+    return true;
+  }
+
+  switch (method) {
+    case "copy":
+      return true;
+    case "github-api":
+      return Boolean(githubOAuthState.value.accessToken && githubOAuthState.value.selectedRepo);
+    case "gh-cli":
+      return Boolean(
+        currentHelper.value.reachable &&
+        currentHelper.value.github?.gh_installed &&
+        currentHelper.value.github?.authenticated
+      );
+    default:
+      return false;
+  }
+});
+
+// Computed: 現在のモードでセットアップが必要かどうか
+export const needsSetup = computed(() => {
+  const method = issueCreationSettings.value.createMethod;
+  const customApi = issueCreationSettings.value.customApi;
+
+  // Custom API only mode はセットアップ不要
+  if (customApi.enabled && customApi.skipBuiltinCreate) {
+    return false;
+  }
+
+  switch (method) {
+    case "copy":
+      return false;
+    case "github-api":
+      return !githubOAuthState.value.accessToken;
+    case "gh-cli": {
+      const helper = currentHelper.value;
+      return !helper.reachable || !helper.github?.gh_installed || !helper.github?.authenticated;
+    }
+    default:
+      return false;
+  }
+});
+
+// Computed: セットアップが必要な理由
+export type SetupRequirement =
+  | { type: "github-api-not-connected" }
+  | { type: "helper-not-reachable" }
+  | { type: "helper-gh-not-installed" }
+  | { type: "helper-gh-not-authenticated" }
+  | null;
+
+export const setupRequirement = computed<SetupRequirement>(() => {
+  const method = issueCreationSettings.value.createMethod;
+  const customApi = issueCreationSettings.value.customApi;
+
+  if (customApi.enabled && customApi.skipBuiltinCreate) {
+    return null;
+  }
+
+  switch (method) {
+    case "github-api":
+      if (!githubOAuthState.value.accessToken) {
+        return { type: "github-api-not-connected" };
+      }
+      return null;
+    case "gh-cli": {
+      const helper = currentHelper.value;
+      if (!helper.reachable) {
+        return { type: "helper-not-reachable" };
+      }
+      if (!helper.github?.gh_installed) {
+        return { type: "helper-gh-not-installed" };
+      }
+      if (!helper.github?.authenticated) {
+        return { type: "helper-gh-not-authenticated" };
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+});
