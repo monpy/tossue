@@ -10,8 +10,9 @@ import {
   recordingState,
   issueCreationSettings,
   githubOAuthState,
+  helperAuthState,
 } from "../store/signals";
-import { createIssueViaHelper } from "../hooks/useHelper";
+import { createIssueViaHelper, uploadFileViaHelper, checkUploadScriptConfigured } from "../hooks/useHelper";
 import { resetStateAfterCreate } from "../hooks/useTabState";
 import { createIssueViaOAuth } from "../utils/github-api";
 import { sanitizeFilename } from "../utils/format";
@@ -187,26 +188,41 @@ async function handleGitHubApiMode(
     return;
   }
 
+  statusMessage.value = "Uploading attachments...";
+
+  // Try to upload attachments via Helper first
+  const uploadResult = await uploadAttachmentsViaHelper();
+  const finalBody = appendUploadedAttachmentsToBody(body, uploadResult.uploaded, uploadResult.failed);
+
   statusMessage.value = "Creating issue via GitHub API...";
 
   try {
     const result = await createIssueViaOAuth({
       repo: oauth.selectedRepo,
       title,
-      body,
+      body: finalBody,
       labels,
     });
 
+    // If script not configured, download attachments locally
+    const shouldDownload = !uploadResult.scriptConfigured;
     const [openResult, downloadResult] = await Promise.allSettled([
       openCreatedIssue(result.url),
-      downloadIssueAttachments(title),
+      shouldDownload ? downloadIssueAttachments(title) : Promise.resolve(0),
     ]);
 
-    statusMessage.value = buildIssueCreatedMessage(
+    let message = buildIssueCreatedMessage(
       result.url,
       openResult.status === "fulfilled",
-      downloadResult.status === "fulfilled" ? downloadResult.value : 0
+      shouldDownload && downloadResult.status === "fulfilled" ? downloadResult.value : 0
     );
+    if (uploadResult.uploaded.length > 0) {
+      message += ` Uploaded ${uploadResult.uploaded.length} file${uploadResult.uploaded.length > 1 ? "s" : ""}.`;
+    }
+    if (uploadResult.failed.length > 0) {
+      message += ` Failed: ${uploadResult.failed.length}.`;
+    }
+    statusMessage.value = message;
   } catch (error) {
     statusMessage.value = `Failed to create issue: ${(error as Error).message}`;
   }
@@ -240,21 +256,36 @@ async function handleHelperMode(
     return;
   }
 
+  statusMessage.value = "Uploading attachments...";
+
+  // Upload attachments via Helper
+  const uploadResult = await uploadAttachmentsViaHelper();
+  const finalBody = appendUploadedAttachmentsToBody(body, uploadResult.uploaded, uploadResult.failed);
+
   statusMessage.value = "Creating issue via Helper...";
 
   try {
-    const result = await createIssueViaHelper(repo, title, body, labels);
+    const result = await createIssueViaHelper(repo, title, finalBody, labels);
 
+    // If script not configured, download attachments locally
+    const shouldDownload = !uploadResult.scriptConfigured;
     const [openResult, downloadResult] = await Promise.allSettled([
       openCreatedIssue(result.issue_url),
-      downloadIssueAttachments(title),
+      shouldDownload ? downloadIssueAttachments(title) : Promise.resolve(0),
     ]);
 
-    statusMessage.value = buildIssueCreatedMessage(
+    let message = buildIssueCreatedMessage(
       result.issue_url,
       openResult.status === "fulfilled",
-      downloadResult.status === "fulfilled" ? downloadResult.value : 0
+      shouldDownload && downloadResult.status === "fulfilled" ? downloadResult.value : 0
     );
+    if (uploadResult.uploaded.length > 0) {
+      message += ` Uploaded ${uploadResult.uploaded.length} file${uploadResult.uploaded.length > 1 ? "s" : ""}.`;
+    }
+    if (uploadResult.failed.length > 0) {
+      message += ` Failed: ${uploadResult.failed.length}.`;
+    }
+    statusMessage.value = message;
   } catch (error) {
     statusMessage.value = (error as Error).message;
   }
@@ -412,4 +443,112 @@ function buildIssueCreatedMessage(issueUrl: string, opened: boolean, attachmentC
   }
 
   return `${opened ? "Created and opened" : "Created"}: ${issueUrl} | Downloaded ${attachmentCount} attachment${attachmentCount > 1 ? "s" : ""}.`;
+}
+
+interface UploadedAttachment {
+  filename: string;
+  mimeType: string;
+  url: string;
+}
+
+interface UploadResult {
+  uploaded: UploadedAttachment[];
+  failed: string[];
+  scriptConfigured: boolean;
+}
+
+async function uploadAttachmentsViaHelper(): Promise<UploadResult> {
+  const state = currentState.value;
+  const recording = recordingState.value;
+  const uploaded: UploadedAttachment[] = [];
+  const failed: string[] = [];
+
+  // Check if helper is available
+  if (!helperAuthState.value.authenticated || !currentHelper.value.reachable) {
+    return { uploaded: [], failed: [], scriptConfigured: false };
+  }
+
+  const isConfigured = await checkUploadScriptConfigured();
+  if (!isConfigured) {
+    return { uploaded: [], failed: [], scriptConfigured: false };
+  }
+
+  // Upload screenshots
+  const screenshots = state.screenshots || [];
+  for (let i = 0; i < screenshots.length; i++) {
+    const filename = `screenshot-${i + 1}.png`;
+    statusMessage.value = `Uploading ${filename}...`;
+    const url = await uploadFileViaHelper(filename, "image/png", screenshots[i].dataUrl);
+    if (url) {
+      uploaded.push({ filename, mimeType: "image/png", url });
+    } else {
+      failed.push(filename);
+    }
+  }
+
+  // Upload recordings
+  const recordings = state.recordings || [];
+  for (let i = 0; i < recordings.length; i++) {
+    const rec = recordings[i];
+    const filename = `recording-${i + 1}.webm`;
+    statusMessage.value = `Uploading ${filename}...`;
+    const dataUrl = await blobUrlToDataUrl(rec.dataUrl);
+    const url = await uploadFileViaHelper(filename, "video/webm", dataUrl);
+    if (url) {
+      uploaded.push({ filename, mimeType: "video/webm", url });
+    } else {
+      failed.push(filename);
+    }
+  }
+
+  // Upload current recording
+  if (recording.objectUrl) {
+    const filename = "recording-current.webm";
+    statusMessage.value = `Uploading ${filename}...`;
+    const dataUrl = await blobUrlToDataUrl(recording.objectUrl);
+    const url = await uploadFileViaHelper(filename, "video/webm", dataUrl);
+    if (url) {
+      uploaded.push({ filename, mimeType: "video/webm", url });
+    } else {
+      failed.push(filename);
+    }
+  }
+
+  return { uploaded, failed, scriptConfigured: true };
+}
+
+function appendUploadedAttachmentsToBody(
+  body: string,
+  attachments: UploadedAttachment[],
+  failedFiles: string[]
+): string {
+  if (attachments.length === 0 && failedFiles.length === 0) {
+    return body;
+  }
+
+  // Remove the existing "## Attachments" section if it exists (since we're replacing with URLs)
+  const attachmentsSectionRegex = /\n\n## Attachments\n[^\n]*(?:\n- [^\n]*)*/;
+  let newBody = body.replace(attachmentsSectionRegex, "");
+
+  const lines: string[] = [];
+
+  // Add successfully uploaded attachments
+  for (const att of attachments) {
+    if (att.mimeType.startsWith("image/")) {
+      lines.push(`![${att.filename}](${att.url})`);
+    } else {
+      lines.push(`[${att.filename}](${att.url})`);
+    }
+  }
+
+  // Add failed uploads as notes
+  for (const filename of failedFiles) {
+    lines.push(`- ⚠️ ${filename} (upload failed)`);
+  }
+
+  if (lines.length > 0) {
+    newBody += `\n\n## Attachments\n${lines.join("\n")}`;
+  }
+
+  return newBody;
 }

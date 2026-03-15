@@ -13,7 +13,7 @@ import {
   captureImageStatus,
   DEFAULT_LABEL_PRESETS,
 } from "../store/signals";
-import { refreshHelperState } from "./useHelper";
+import { refreshHelperState, loadAuthToken } from "./useHelper";
 import type { TabState, Message } from "../../shared/types";
 
 const LABEL_STORAGE_KEY = "labelPresets";
@@ -67,7 +67,7 @@ export function useTabState() {
 async function bootstrap() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId.value = tab?.id ?? null;
-  await Promise.all([loadLabelPresets(), loadIssueOptions()]);
+  await Promise.all([loadLabelPresets(), loadIssueOptions(), loadAuthToken()]);
   await Promise.all([refreshState(), refreshHelperState()]);
 }
 

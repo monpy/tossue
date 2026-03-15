@@ -17,6 +17,10 @@ tauri = { version = "=2.0.0", features = ["tray-icon"] }
 tauri-utils = "=2.0.0"
 tokio = { version = "=1.39.3", features = ["fs", "io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
 tower-http = { version = "=0.5.2", features = ["cors"] }
+rand = "0.8"
+arboard = "3"
+dirs = "5"
+base64 = "0.22"
 
 [features]
 default = ["custom-protocol"]

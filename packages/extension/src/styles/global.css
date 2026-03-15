@@ -810,3 +810,77 @@ textarea {
   color: #dc2626;
 }
 
+/* Helper Auth */
+.helper-auth-section {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+}
+
+.auth-code-form {
+  display: grid;
+  gap: 10px;
+}
+
+.auth-instruction {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.auth-code-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.auth-code-input {
+  flex: 1;
+  max-width: 120px;
+  padding: 8px 12px;
+  font-size: 18px;
+  font-family: "SF Mono", "Monaco", monospace;
+  letter-spacing: 0.2em;
+  text-align: center;
+}
+
+.auth-token-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.auth-token-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.auth-error {
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.helper-auth-connected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(43, 138, 62, 0.1);
+  border: 1px solid rgba(43, 138, 62, 0.3);
+}
+
+.auth-connected-text {
+  font-size: 13px;
+  color: #2b8a3e;
+}
+
+.auth-disconnect-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+

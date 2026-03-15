@@ -4,6 +4,7 @@ import {
   currentHelper,
   currentState,
   activeSidepanelTab,
+  uploadScriptState,
 } from "../store/signals";
 import { Card } from "./ui";
 
@@ -81,6 +82,28 @@ function getStatusInfo(): StatusInfo {
   }
 }
 
+function getUploadStatusText(): string {
+  const { configured, enabled } = uploadScriptState.value;
+  if (!configured) {
+    return "Not configured";
+  }
+  if (!enabled) {
+    return "Disabled";
+  }
+  return "Enabled";
+}
+
+function getUploadStatusColor(): string {
+  const { configured, enabled } = uploadScriptState.value;
+  if (!configured) {
+    return "text-muted";
+  }
+  if (!enabled) {
+    return "text-amber-500";
+  }
+  return "text-green-600";
+}
+
 function StatusDetails() {
   const method = issueCreationSettings.value.createMethod;
   const settings = issueCreationSettings.value;
@@ -106,10 +129,20 @@ function StatusDetails() {
       )}
 
       {method === "github-api" && oauth.accessToken && (
-        <div class={rowClass}>
-          <span class="text-muted">Account:</span>
-          <span>@{oauth.authenticatedUser}</span>
-        </div>
+        <>
+          <div class={rowClass}>
+            <span class="text-muted">Account:</span>
+            <span>@{oauth.authenticatedUser}</span>
+          </div>
+          {helper.reachable && (
+            <div class={rowClass}>
+              <span class="text-muted">Upload:</span>
+              <span class={getUploadStatusColor()}>
+                {getUploadStatusText()}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {method === "gh-cli" && (
@@ -132,6 +165,12 @@ function StatusDetails() {
                 <span class="text-muted">Auth:</span>
                 <span class={helper.github?.authenticated ? "text-green-600" : "text-amber-600"}>
                   {helper.github?.authenticated ? `@${helper.github.login}` : "Not authenticated"}
+                </span>
+              </div>
+              <div class={rowClass}>
+                <span class="text-muted">Upload:</span>
+                <span class={getUploadStatusColor()}>
+                  {getUploadStatusText()}
                 </span>
               </div>
             </>
