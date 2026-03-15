@@ -62,6 +62,20 @@ export const helperAuthState = signal<{
   token: null,
 });
 
+// Upload script state (for Helper mode)
+export const uploadScriptState = signal<{
+  configured: boolean;
+  enabled: boolean;
+}>({
+  configured: false,
+  enabled: false,
+});
+
+// For backward compatibility and convenience
+export const uploadScriptConfigured = computed(() =>
+  uploadScriptState.value.configured && uploadScriptState.value.enabled
+);
+
 export const recordingState = signal<RecordingState>({
   stream: null,
   recorder: null,

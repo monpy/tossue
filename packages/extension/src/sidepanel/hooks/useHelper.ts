@@ -1,4 +1,4 @@
-import { currentHelper, statusMessage, repositoryLabels, isLoadingLabels, helperAuthState } from "../store/signals";
+import { currentHelper, statusMessage, repositoryLabels, isLoadingLabels, helperAuthState, uploadScriptState } from "../store/signals";
 import type { RepositoryLabel } from "../../shared/types";
 
 const HELPER_BASE_URL = "http://127.0.0.1:47321";
@@ -19,6 +19,17 @@ export async function refreshHelperState() {
   try {
     // /health is public (no auth required)
     const health = await helperGet("/health", false);
+
+    // Check upload script status (public endpoint)
+    try {
+      const scriptStatus = await helperGet("/upload/script", false);
+      uploadScriptState.value = {
+        configured: scriptStatus.configured === true,
+        enabled: scriptStatus.enabled === true,
+      };
+    } catch {
+      uploadScriptState.value = { configured: false, enabled: false };
+    }
 
     // Check if we're authenticated with helper
     if (!helperAuthState.value.authenticated) {
@@ -46,6 +57,7 @@ export async function refreshHelperState() {
       repositories,
     };
   } catch (error) {
+    uploadScriptState.value = { configured: false, enabled: false };
     currentHelper.value = {
       reachable: false,
       health: null,

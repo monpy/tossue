@@ -46,6 +46,7 @@ struct MenuState<R: tauri::Runtime> {
   repos_item: MenuItem<R>,
   install_item: MenuItem<R>,
   login_item: MenuItem<R>,
+  upload_settings_item: MenuItem<R>,
 }
 
 #[derive(Clone, Serialize)]
@@ -175,11 +176,14 @@ struct UploadTestResponse {
 struct UploadScriptResponse {
   script: String,
   configured: bool,
+  enabled: bool,
 }
 
 #[derive(Deserialize)]
 struct SaveUploadScriptRequest {
   script: String,
+  #[serde(default)]
+  enabled: Option<bool>,
 }
 
 #[tokio::main]
@@ -255,6 +259,7 @@ async fn main() {
         repos_item: repos_item.clone(),
         install_item: install_item.clone(),
         login_item: login_item.clone(),
+        upload_settings_item: upload_settings_item.clone(),
       });
 
       let tray_icon = app.default_window_icon().cloned();
@@ -370,9 +375,13 @@ async fn run_http_server(state: AppState) -> Result<(), String> {
   }
 
   // Public routes (no auth required)
+  // Upload script endpoints are public since they're only accessible from localhost UI
   let public_routes = Router::new()
     .route("/health", get(health))
     .route("/auth/status", get(auth_status))
+    .route("/upload/test", post(upload_test))
+    .route("/upload/script", get(get_upload_script_handler))
+    .route("/upload/script", axum::routing::put(save_upload_script_handler))
     .with_state(state.clone());
 
   // Protected routes (auth required)
@@ -383,9 +392,6 @@ async fn run_http_server(state: AppState) -> Result<(), String> {
     .route("/github/repos/:owner/:repo/labels", get(repository_labels))
     .route("/issues", post(create_issue))
     .route("/upload/file", post(upload_file))
-    .route("/upload/test", post(upload_test))
-    .route("/upload/script", get(get_upload_script_handler))
-    .route("/upload/script", axum::routing::put(save_upload_script_handler))
     .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
     .with_state(state.clone());
 
@@ -556,6 +562,16 @@ async fn create_issue(
 async fn upload_file(
   Json(payload): Json<UploadFileRequest>,
 ) -> Result<Json<UploadFileResponse>, (StatusCode, Json<ErrorResponse>)> {
+  // Check if upload is enabled
+  if !load_upload_script_enabled().await {
+    return Err((
+      StatusCode::BAD_REQUEST,
+      Json(ErrorResponse {
+        error: "Upload script is disabled".into(),
+      }),
+    ));
+  }
+
   // Decode base64 data
   let data = base64_decode(&payload.data).map_err(|e| {
     (
@@ -672,16 +688,30 @@ async fn test_upload_with_script(
 
 async fn get_upload_script_handler() -> Result<Json<UploadScriptResponse>, (StatusCode, Json<ErrorResponse>)> {
   let script = load_upload_script().await.map_err(internal_error)?;
+  let enabled = load_upload_script_enabled().await;
   let configured = !script.trim().is_empty();
-  Ok(Json(UploadScriptResponse { script, configured }))
+  Ok(Json(UploadScriptResponse { script, configured, enabled }))
 }
 
 async fn save_upload_script_handler(
+  State(state): State<AppState>,
   Json(payload): Json<SaveUploadScriptRequest>,
 ) -> Result<Json<ActionResponse>, (StatusCode, Json<ErrorResponse>)> {
   save_upload_script(&payload.script)
     .await
     .map_err(internal_error)?;
+
+  // Save enabled state if provided
+  if let Some(enabled) = payload.enabled {
+    save_upload_script_enabled(enabled)
+      .await
+      .map_err(internal_error)?;
+  }
+
+  // Update tray menu icon
+  if let Some(ref handle) = state.app_handle {
+    let _ = update_upload_menu(handle).await;
+  }
 
   Ok(Json(ActionResponse {
     ok: true,
@@ -1018,6 +1048,10 @@ async fn refresh_menu_state<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> tau
     .set_text(&format!("127.0.0.1:{} ready for extension requests", app.state::<AppState>().port))?;
   menu_state.account_item.set_text(&format!("Account: {account_name}"))?;
   menu_state.repos_item.set_text(&format!("Repositories: {repo_count}"))?;
+
+  // Update upload script menu
+  let _ = update_upload_menu(app).await;
+
   Ok(())
 }
 
@@ -1048,6 +1082,57 @@ fn get_upload_script_path() -> PathBuf {
     .or_else(dirs::home_dir)
     .unwrap_or_else(|| PathBuf::from("."));
   config_dir.join("tossue").join("upload-script")
+}
+
+fn get_upload_script_enabled_path() -> PathBuf {
+  let config_dir = dirs::config_dir()
+    .or_else(dirs::home_dir)
+    .unwrap_or_else(|| PathBuf::from("."));
+  config_dir.join("tossue").join("upload-script-enabled")
+}
+
+async fn load_upload_script_enabled() -> bool {
+  let path = get_upload_script_enabled_path();
+  match tokio::fs::read_to_string(&path).await {
+    Ok(content) => content.trim() == "true",
+    Err(_) => false, // Default to disabled
+  }
+}
+
+async fn save_upload_script_enabled(enabled: bool) -> Result<(), String> {
+  let path = get_upload_script_enabled_path();
+
+  // Ensure parent directory exists
+  if let Some(parent) = path.parent() {
+    tokio::fs::create_dir_all(parent)
+      .await
+      .map_err(|e| format!("failed to create config directory: {e}"))?;
+  }
+
+  tokio::fs::write(&path, if enabled { "true" } else { "false" })
+    .await
+    .map_err(|e| format!("failed to write upload script enabled state: {e}"))?;
+
+  Ok(())
+}
+
+async fn update_upload_menu<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) -> Result<(), tauri::Error> {
+  let script = load_upload_script().await.unwrap_or_default();
+  let enabled = load_upload_script_enabled().await;
+  let configured = !script.trim().is_empty();
+
+  let icon = if configured && enabled {
+    "✅"
+  } else if configured {
+    "📤"
+  } else {
+    "📤"
+  };
+
+  let text = format!("{} Upload Script Settings", icon);
+
+  let menu_state = handle.state::<MenuState<R>>();
+  menu_state.upload_settings_item.set_text(&text)
 }
 
 async fn load_upload_script() -> Result<String, String> {
