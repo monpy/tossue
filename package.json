@@ -13,6 +13,8 @@
     "typecheck:extension": "npm run typecheck -w packages/extension",
     "dev:helper": "npm run tauri:dev -w packages/helper",
     "build:helper": "npm run tauri:build -w packages/helper",
+    "dev:oauth-worker": "npm run dev -w @tossue/oauth-worker",
+    "deploy:oauth-worker": "npm run deploy -w @tossue/oauth-worker",
     "dev:demo:nuxt": "npm run dev -w @tossue/demo-nuxt",
     "dev:demo:next": "npm run dev -w @tossue/demo-next"
   },

@@ -9,7 +9,11 @@ import type {
   ConsoleEntry,
   NetworkEntry,
   RepositoryLabel,
+  IssueCreationSettings,
+  GitHubOAuthState,
+  GitHubOAuthRepository,
 } from "../../shared/types";
+import { DEFAULT_ISSUE_CREATION_SETTINGS } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
 
 export type TimelineEntry =
@@ -169,3 +173,37 @@ export const unifiedTimeline = computed<TimelineEntry[]>(() => {
 export const hasTimelineEntries = computed(
   () => unifiedTimeline.value.length > 0
 );
+
+// Settings signals
+export const issueCreationSettings = signal<IssueCreationSettings>({
+  ...DEFAULT_ISSUE_CREATION_SETTINGS,
+});
+
+export const githubOAuthState = signal<GitHubOAuthState>({});
+
+export const oauthRepositories = signal<GitHubOAuthRepository[]>([]);
+export const isLoadingOAuthRepos = signal<boolean>(false);
+
+// Active tab in sidepanel
+export type SidepanelTab = "main" | "settings";
+export const activeSidepanelTab = signal<SidepanelTab>("main");
+
+// Computed: can create issue based on current mode
+export const canCreateIssueWithCurrentMode = computed(() => {
+  const method = issueCreationSettings.value.createMethod;
+
+  switch (method) {
+    case "copy":
+      return true;
+    case "github-api":
+      return Boolean(githubOAuthState.value.accessToken && githubOAuthState.value.selectedRepo);
+    case "gh-cli":
+      return Boolean(
+        currentHelper.value.reachable &&
+        currentHelper.value.github?.gh_installed &&
+        currentHelper.value.github?.authenticated
+      );
+    default:
+      return false;
+  }
+});
