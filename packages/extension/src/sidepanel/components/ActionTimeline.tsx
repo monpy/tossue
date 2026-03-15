@@ -195,6 +195,8 @@ type ActionRowProps = {
 function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: ActionRowProps) {
   const label = formatActionTitle(action);
   const detail = formatActionDetail(action);
+  const framework = action.targetInfo?.framework;
+  const hasComponent = framework?.selectedComponent && framework.framework !== "DOM";
 
   return (
     <>
@@ -230,7 +232,12 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
         </Button>
         <span class="action-row-index">{formatActionIndex(index + 1)}</span>
         <div class="action-row-copy">
-          <strong class="action-row-title">{label}</strong>
+          <div class="action-row-title-row">
+            <strong class="action-row-title">{label}</strong>
+            {hasComponent && (
+              <span class="action-row-chip">{framework.framework}</span>
+            )}
+          </div>
           {detail && <span class="action-row-detail" title={detail}>{detail}</span>}
         </div>
       </article>

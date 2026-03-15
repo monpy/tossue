@@ -135,4 +135,181 @@
       at: new Date().toISOString(),
     });
   });
+
+  // Framework component detection - runs in page context where framework internals are accessible
+  window.addEventListener("__tossue_get_framework_component__", ((event: CustomEvent) => {
+    const { selector } = event.detail || {};
+    if (!selector) return;
+
+    try {
+      const element = document.querySelector(selector);
+      if (!element) {
+        emit("framework_component", { selector, component: null });
+        return;
+      }
+
+      // Try React first, then Vue
+      const reactInfo = getReactComponentInfo(element);
+      if (reactInfo) {
+        emit("framework_component", { selector, component: reactInfo });
+        return;
+      }
+
+      const vueInfo = getVueComponentInfo(element);
+      emit("framework_component", { selector, component: vueInfo });
+    } catch (e) {
+      emit("framework_component", { selector, component: null, error: String(e) });
+    }
+  }) as EventListener);
+
+  // React component detection
+  function getReactComponentInfo(element: Element): { framework: string; selectedComponent: string; componentTrail: string[] } | null {
+    let current: Element | null = element;
+
+    while (current && current !== document.body) {
+      const fiber = findReactFiber(current);
+      if (fiber) {
+        const trail = buildReactTrail(fiber);
+        if (trail.length > 0) {
+          return {
+            framework: "React",
+            selectedComponent: trail[0],
+            componentTrail: trail.slice(0, 6),
+          };
+        }
+      }
+      current = current.parentElement;
+    }
+
+    return null;
+  }
+
+  function findReactFiber(element: Element): unknown {
+    const el = element as Element & { [key: string]: unknown };
+    try {
+      for (const key of Object.keys(el)) {
+        if (key.startsWith("__reactFiber$") || key.startsWith("__reactInternalInstance$")) {
+          return el[key];
+        }
+      }
+    } catch {
+      // Ignore
+    }
+    return null;
+  }
+
+  function buildReactTrail(fiber: unknown): string[] {
+    const trail: string[] = [];
+    let current = fiber as { elementType?: unknown; type?: unknown; return?: unknown } | null;
+
+    while (current && trail.length < 6) {
+      const name = getReactComponentName(current);
+      // Only include user-defined components (PascalCase), skip native DOM elements
+      if (name && !trail.includes(name) && isUserComponent(name)) {
+        trail.push(name);
+      }
+      current = current.return as typeof current;
+    }
+
+    return trail;
+  }
+
+  function getReactComponentName(fiber: { elementType?: unknown; type?: unknown }): string {
+    const type = (fiber.elementType || fiber.type) as { displayName?: string; name?: string } | string | null;
+    if (!type) return "";
+    if (typeof type === "string") return type;
+    return type.displayName || type.name || "";
+  }
+
+  function isUserComponent(name: string): boolean {
+    // User-defined React components start with uppercase letter (PascalCase)
+    // Native DOM elements are lowercase (div, input, span, etc.)
+    return /^[A-Z]/.test(name);
+  }
+
+  function getVueComponentInfo(element: Element): { framework: string; selectedComponent: string; componentTrail: string[]; filePath?: string } | null {
+    // Try to find Vue instance on element or ancestors
+    let current: Element | null = element;
+
+    while (current && current !== document.body) {
+      // Check for Vue 3 internal properties
+      const instance = findVue3Instance(current);
+      if (instance) {
+        const trail = buildVue3Trail(instance);
+        if (trail.length > 0) {
+          return {
+            framework: "Vue",
+            selectedComponent: trail[0],
+            componentTrail: trail.slice(0, 6),
+          };
+        }
+      }
+      current = current.parentElement;
+    }
+
+    return null;
+  }
+
+  function findVue3Instance(element: Element): unknown {
+    const el = element as Element & {
+      __vueParentComponent?: unknown;
+      __vue_app__?: { _instance?: unknown };
+      [key: string]: unknown;
+    };
+
+    // Vue 3: __vueParentComponent
+    if (el.__vueParentComponent) {
+      return el.__vueParentComponent;
+    }
+
+    // Vue 3 app root
+    if (el.__vue_app__?._instance) {
+      return el.__vue_app__._instance;
+    }
+
+    // Check for __vnode or other Vue 3 properties
+    try {
+      for (const key of Object.keys(el)) {
+        if (key.startsWith("__vnode")) {
+          const vnode = el[key] as { component?: unknown };
+          if (vnode?.component) {
+            return vnode.component;
+          }
+        }
+        if (key.startsWith("__vue") && key !== "__vue_app__") {
+          const value = el[key] as { type?: unknown; proxy?: unknown };
+          if (value && typeof value === "object" && (value.type || value.proxy)) {
+            return value;
+          }
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
+    return null;
+  }
+
+  function buildVue3Trail(instance: unknown): string[] {
+    const trail: string[] = [];
+    let current = instance as { type?: { name?: string; __name?: string }; parent?: unknown; proxy?: { $options?: { name?: string } } } | null;
+
+    while (current && trail.length < 6) {
+      const name = getVue3ComponentName(current);
+      // Only include user-defined components, skip internal Vue components
+      if (name && !trail.includes(name) && isUserComponent(name)) {
+        trail.push(name);
+      }
+      current = current.parent as typeof current;
+    }
+
+    return trail;
+  }
+
+  function getVue3ComponentName(instance: { type?: { name?: string; __name?: string; displayName?: string }; proxy?: { $options?: { name?: string } } }): string {
+    const type = instance.type;
+    if (!type) return "";
+    if (typeof type === "string") return type;
+    return type.name || type.__name || type.displayName || instance.proxy?.$options?.name || "";
+  }
 })();

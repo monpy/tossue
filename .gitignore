@@ -6,6 +6,9 @@ target/
 dist/
 build/
 .vite/
+.next/
+.nuxt/
+next-env.d.ts
 
 # OS files
 .DS_Store
