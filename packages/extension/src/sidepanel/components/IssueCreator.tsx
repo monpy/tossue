@@ -130,22 +130,38 @@ async function downloadIssueAttachments(title: string): Promise<number> {
   const state = currentState.value;
   const recording = recordingState.value;
 
-  if (state.screenshotDataUrl) {
+  const screenshots = state.screenshots || [];
+  for (let i = 0; i < screenshots.length; i++) {
+    const screenshot = screenshots[i];
     jobs.push(
       chrome.downloads.download({
-        url: state.screenshotDataUrl,
-        filename: `Tossue/${safeTitle}-${timestamp}.png`,
+        url: screenshot.dataUrl,
+        filename: `Tossue/${safeTitle}-${timestamp}-screenshot-${i + 1}.png`,
         saveAs: false,
       })
     );
   }
 
+  const recordings = state.recordings || [];
+  for (let i = 0; i < recordings.length; i++) {
+    const rec = recordings[i];
+    const recordingUrl = await blobUrlToDataUrl(rec.dataUrl);
+    jobs.push(
+      chrome.downloads.download({
+        url: recordingUrl,
+        filename: `Tossue/${safeTitle}-${timestamp}-recording-${i + 1}.webm`,
+        saveAs: false,
+      })
+    );
+  }
+
+  // Also handle any current recording that hasn't been finalized yet
   if (recording.objectUrl) {
     const recordingUrl = await blobUrlToDataUrl(recording.objectUrl);
     jobs.push(
       chrome.downloads.download({
         url: recordingUrl,
-        filename: `Tossue/${safeTitle}-${timestamp}.webm`,
+        filename: `Tossue/${safeTitle}-${timestamp}-recording-current.webm`,
         saveAs: false,
       })
     );

@@ -60,14 +60,26 @@ async function handleMessage(
     case "CLEAR_SELECTED_AREA_HIGHLIGHT":
       await sendTabMessage(tabId, { type: "CLEAR_SELECTED_AREA_HIGHLIGHT" });
       return { cleared: true };
+    case "STOP_PICKER":
+      await sendTabMessage(tabId, { type: "STOP_PICKER" });
+      return { stopped: true };
     case "AREA_SELECTED":
       updateState(tabId, { selectedArea: message.payload as TabState["selectedArea"] });
       return await respondWithState(tabId);
     case "CAPTURE_RECT_SELECTED":
       updateState(tabId, { captureRect: message.payload as TabState["captureRect"] });
       return await respondWithState(tabId);
+    case "PICKER_CANCELLED":
+      chrome.runtime
+        .sendMessage({
+          type: "PICKER_CANCELLED",
+          tabId,
+          payload: message.payload,
+        })
+        .catch(() => {});
+      return {};
     case "CLEAR_SCREENSHOT":
-      updateState(tabId, { captureRect: null, screenshotDataUrl: "" });
+      updateState(tabId, { captureRect: null, screenshots: [] });
       return await respondWithState(tabId);
     case "ACTION_LOGGED":
       appendAction(tabId, message.payload as Partial<UserAction>);
@@ -168,7 +180,8 @@ function createEmptyState(): TabState {
     actionHistoryFuture: [],
     consoleEntries: [],
     networkEntries: [],
-    screenshotDataUrl: "",
+    screenshots: [],
+    recordings: [],
     draft: {
       repo: "",
       summary: "",
@@ -399,9 +412,6 @@ async function captureScreenshot(
     format: "png",
   });
 
-  if (tabId) {
-    updateState(tabId, { screenshotDataUrl });
-  }
   return screenshotDataUrl;
 }
 

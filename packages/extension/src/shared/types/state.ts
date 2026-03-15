@@ -75,6 +75,13 @@ export type IssueDraft = {
   labels: string[];
 };
 
+export type MediaItem = {
+  id: string;
+  type: "image" | "video";
+  dataUrl: string;
+  capturedAt: number;
+};
+
 export type TabState = {
   selectedArea: SelectedArea | null;
   captureRect: CaptureRect | null;
@@ -83,7 +90,8 @@ export type TabState = {
   actionHistoryFuture: UserAction[][];
   consoleEntries: ConsoleEntry[];
   networkEntries: NetworkEntry[];
-  screenshotDataUrl: string;
+  screenshots: MediaItem[];
+  recordings: MediaItem[];
   draft: IssueDraft;
 };
 

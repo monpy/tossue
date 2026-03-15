@@ -5,6 +5,7 @@ export interface ButtonProps {
   variant?: "primary" | "secondary" | "ghost";
   size?: "md" | "sm";
   iconOnly?: boolean;
+  active?: boolean;
   disabled?: boolean;
   children: ComponentChildren;
   onClick?: () => void;
@@ -34,6 +35,7 @@ export function Button({
   variant = "primary",
   size = "md",
   iconOnly = false,
+  active = false,
   disabled = false,
   children,
   onClick,
@@ -46,8 +48,9 @@ export function Button({
     "border-0 rounded-full cursor-pointer font-bold leading-none disabled:opacity-50 disabled:cursor-default";
   const variantClass = variantClasses[variant];
   const sizeClass = iconOnly ? iconSizeClasses[size] : sizeClasses[size];
+  const activeClass = active ? "ring-2 ring-accent ring-inset" : "";
 
-  const classes = cn(baseClasses, variantClass, sizeClass, className);
+  const classes = cn(baseClasses, variantClass, sizeClass, activeClass, className);
 
   return (
     <button

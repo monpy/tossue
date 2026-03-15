@@ -47,6 +47,16 @@
 | `md` | `w-7 h-7 p-0` |
 | `sm` | `w-5.5 h-5.5 p-0` |
 
+### アクティブ状態
+
+`active` プロパティでボタンが操作中であることを視覚的に示す。キャプチャツールの「Selecting...」「Capturing...」状態などで使用する。
+
+| バリアント | アクティブ時 UnoCSS クラス |
+|-----------|---------------------------|
+| `secondary` | `ring-2 ring-accent ring-inset` |
+
+アクティブ状態は `secondary` バリアントでのみ使用する想定。
+
 ### 共通スタイル
 
 ```
@@ -60,6 +70,7 @@ interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'md' | 'sm';
   iconOnly?: boolean;
+  active?: boolean;
   disabled?: boolean;
   children: ComponentChildren;
   onClick?: () => void;
@@ -84,6 +95,9 @@ interface ButtonProps {
 
 // Small secondary button
 <Button variant="secondary" size="sm" onClick={handleAdd}>Add</Button>
+
+// Active state (e.g., during capture)
+<Button variant="secondary" active>Selecting...</Button>
 ```
 
 ## Card コンポーネント
@@ -165,6 +179,58 @@ packages/extension/src/sidepanel/components/
 ```
 
 スタイルは各コンポーネント内で UnoCSS ユーティリティクラスとして定義する（CSS Modules は使用しない）。
+
+## MediaGrid コンポーネント
+
+複数のスクリーンショット・録画を表示するためのグリッドコンポーネント。
+
+### 概要
+
+キャプチャツールで取得した画像・動画を無制限に追加できる。各メディアは小さなサムネイルとして表示され、個別に削除可能。
+
+### データ構造
+
+```typescript
+type MediaItem = {
+  id: string;
+  type: 'image' | 'video';
+  dataUrl: string;  // image: base64 data URL, video: blob object URL
+  capturedAt: number;
+};
+```
+
+### Props
+
+```typescript
+interface MediaGridProps {
+  items: MediaItem[];
+  onRemove: (id: string) => void;
+}
+```
+
+### レイアウト
+
+| プロパティ | UnoCSS クラス |
+|-----------|---------------|
+| グリッドコンテナ | `grid grid-cols-3 gap-2` |
+| サムネイルラッパー | `relative aspect-video rounded-lg overflow-hidden bg-surface-strong` |
+| 削除ボタン | `absolute top-1 right-1` （`Button variant="ghost" size="sm" iconOnly`） |
+| サムネイル画像/動画 | `w-full h-full object-cover` |
+
+### 動作
+
+- サムネイルクリックで拡大プレビュー（将来実装）
+- 削除ボタンクリックで該当メディアを削除
+- 空の場合はグリッドを非表示
+
+### 使用例
+
+```tsx
+<MediaGrid
+  items={mediaItems}
+  onRemove={(id) => removeMedia(id)}
+/>
+```
 
 ## CSS 削除対象
 

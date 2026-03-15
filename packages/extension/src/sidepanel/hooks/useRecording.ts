@@ -1,11 +1,23 @@
 import { useEffect } from "preact/hooks";
+import type { MediaItem } from "../../shared/types";
 import {
   activeTabId,
+  currentState,
   recordingState,
-  captureStatusMessage,
   recordingButtonText,
+  isSelectingArea,
+  isCapturing,
+  selectAreaButtonText,
+  captureButtonText,
+  recordingStatus,
+  selectAreaStatus,
+  captureImageStatus,
 } from "../store/signals";
 import { decodeFrame } from "../utils/image";
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 export function useRecording() {
   useEffect(() => {
@@ -30,7 +42,7 @@ export function useRecording() {
 
   return {
     toggleRecording,
-    clearRecordingPreview,
+    removeRecording,
   };
 }
 
@@ -40,8 +52,28 @@ export async function toggleRecording(): Promise<void> {
     await stopDebuggerRecording();
     state.recorder.stop();
     recordingButtonText.value = "Start Recording";
-    captureStatusMessage.value = "Stopping recording...";
+    recordingStatus.value = "";
     return;
+  }
+
+  // Stop other pickers if active
+  if (isSelectingArea.value) {
+    await chrome.runtime.sendMessage({
+      type: "STOP_PICKER",
+      tabId: activeTabId.value,
+    });
+    selectAreaButtonText.value = currentState.value.selectedArea ? "Select Again" : "Select Area";
+    isSelectingArea.value = false;
+    selectAreaStatus.value = "";
+  }
+  if (isCapturing.value) {
+    await chrome.runtime.sendMessage({
+      type: "STOP_PICKER",
+      tabId: activeTabId.value,
+    });
+    captureButtonText.value = "Start Capture";
+    isCapturing.value = false;
+    captureImageStatus.value = "";
   }
 
   try {
@@ -83,28 +115,23 @@ export async function toggleRecording(): Promise<void> {
 
     recorder.start();
     recordingButtonText.value = "Stop Recording";
-    captureStatusMessage.value = "Current tab recording started.";
+    recordingStatus.value = "Recording in progress...";
   } catch (error) {
-    captureStatusMessage.value = (error as Error).message;
+    recordingStatus.value = (error as Error).message;
   }
 }
 
-export function clearRecordingPreview(): void {
-  const state = recordingState.value;
-  if (state.recorder && state.recorder.state !== "inactive") {
-    return;
+export function removeRecording(id: string): void {
+  const state = currentState.value;
+  const recordingToRemove = (state.recordings || []).find((item) => item.id === id);
+  if (recordingToRemove) {
+    URL.revokeObjectURL(recordingToRemove.dataUrl);
   }
-
-  if (state.objectUrl) {
-    URL.revokeObjectURL(state.objectUrl);
-  }
-
-  recordingState.value = {
+  currentState.value = {
     ...state,
-    objectUrl: "",
-    chunks: [],
+    recordings: (state.recordings || []).filter((item) => item.id !== id),
   };
-  captureStatusMessage.value = "Recorded preview removed.";
+  recordingStatus.value = "";
 }
 
 function createRecordingCanvasStream(): { canvas: HTMLCanvasElement; stream: MediaStream } {
@@ -148,32 +175,45 @@ function drawRecordingFrame(base64Data: string, metadata?: { deviceWidth: number
 }
 
 function finalizeRecording(): void {
-  const state = recordingState.value;
-  if (state.objectUrl) {
-    URL.revokeObjectURL(state.objectUrl);
+  const recState = recordingState.value;
+  if (recState.objectUrl) {
+    URL.revokeObjectURL(recState.objectUrl);
   }
 
-  const blob = new Blob(state.chunks, {
-    type: state.recorder?.mimeType || "video/webm",
+  const blob = new Blob(recState.chunks, {
+    type: recState.recorder?.mimeType || "video/webm",
   });
   const objectUrl = URL.createObjectURL(blob);
 
-  for (const track of state.stream?.getTracks() || []) {
+  for (const track of recState.stream?.getTracks() || []) {
     track.stop();
   }
+
+  // Add to recordings array
+  const newItem: MediaItem = {
+    id: generateId(),
+    type: "video",
+    dataUrl: objectUrl,
+    capturedAt: Date.now(),
+  };
+  const tabState = currentState.value;
+  currentState.value = {
+    ...tabState,
+    recordings: [...(tabState.recordings || []), newItem],
+  };
 
   recordingState.value = {
     stream: null,
     recorder: null,
     chunks: [],
-    objectUrl,
+    objectUrl: "",
     canvas: null,
     context: null,
     framePending: Promise.resolve(),
   };
 
   recordingButtonText.value = "Start Recording";
-  captureStatusMessage.value = "Recording saved in the panel preview for human review.";
+  recordingStatus.value = "";
 }
 
 async function stopDebuggerRecording(): Promise<void> {

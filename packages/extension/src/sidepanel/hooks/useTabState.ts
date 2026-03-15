@@ -7,6 +7,10 @@ import {
   issueOptions,
   selectAreaButtonText,
   captureButtonText,
+  isSelectingArea,
+  isCapturing,
+  selectAreaStatus,
+  captureImageStatus,
   DEFAULT_LABEL_PRESETS,
 } from "../store/signals";
 import { refreshHelperState } from "./useHelper";
@@ -22,10 +26,30 @@ export function useTabState() {
     const handleMessage = (message: Message) => {
       if (message.type === "STATE_UPDATED" && message.tabId === activeTabId.value) {
         const nextState = message.state as TabState;
+        const prevArea = currentState.value.selectedArea;
+        const prevCaptureRect = currentState.value.captureRect;
         const shouldHydrate = !draftsEqual(currentState.value.draft, nextState?.draft);
-        currentState.value = nextState;
+        // Preserve local screenshots/recordings as they are not stored in background
+        const localScreenshots = currentState.value.screenshots || [];
+        const localRecordings = currentState.value.recordings || [];
+        currentState.value = {
+          ...nextState,
+          screenshots: localScreenshots,
+          recordings: localRecordings,
+        };
         if (shouldHydrate) {
           hydrateLabels(nextState.draft?.labels || []);
+        }
+        // Reset active states when area selection completes
+        if (nextState.selectedArea !== prevArea) {
+          selectAreaButtonText.value = nextState.selectedArea ? "Select Again" : "Select Area";
+          isSelectingArea.value = false;
+          selectAreaStatus.value = "";
+        }
+        // Reset capture state when captureRect changes (capture completed)
+        if (nextState.captureRect !== prevCaptureRect && nextState.captureRect?.capturedAt) {
+          isCapturing.value = false;
+          captureImageStatus.value = "";
         }
       }
     };
