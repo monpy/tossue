@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FormInput, SubmitButton, Card } from "./components";
 
 function CounterDisplay({ count }: { count: number }) {
   return (
@@ -30,6 +31,14 @@ export default function Home() {
   const [networkStatus, setNetworkStatus] = useState("");
   const [consoleStatus, setConsoleStatus] = useState("");
   const [counter, setCounter] = useState(0);
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
+  function handleFormSubmit() {
+    setFormSubmitted(true);
+    setTimeout(() => setFormSubmitted(false), 2000);
+  }
 
   async function triggerNetworkError() {
     setNetworkStatus("Loading...");
@@ -125,6 +134,36 @@ export default function Home() {
             </NestedComponent>
           </NestedComponent>
         </section>
+
+        <Card title="Form Components Test">
+          <p>フォームコンポーネントのテスト（コンポーネント名の検出確認用）</p>
+          <div className="form-demo">
+            <FormInput
+              label="Name"
+              value={formName}
+              onChange={setFormName}
+              placeholder="Enter your name"
+            />
+            <FormInput
+              label="Email"
+              value={formEmail}
+              onChange={setFormEmail}
+              placeholder="Enter your email"
+            />
+            <div className="button-group">
+              <SubmitButton label="Submit" onClick={handleFormSubmit} />
+              <SubmitButton
+                label="Cancel"
+                onClick={() => {
+                  setFormName("");
+                  setFormEmail("");
+                }}
+                variant="secondary"
+              />
+            </div>
+            {formSubmitted && <p className="status">Form submitted!</p>}
+          </div>
+        </Card>
       </main>
     </div>
   );

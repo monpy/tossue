@@ -4,6 +4,21 @@ import { ref } from "vue";
 const networkStatus = ref("");
 const consoleStatus = ref("");
 const counter = ref(0);
+const formName = ref("");
+const formEmail = ref("");
+const formSubmitted = ref(false);
+
+function handleFormSubmit() {
+  formSubmitted.value = true;
+  setTimeout(() => {
+    formSubmitted.value = false;
+  }, 2000);
+}
+
+function clearForm() {
+  formName.value = "";
+  formEmail.value = "";
+}
 
 async function triggerNetworkError() {
   networkStatus.value = "Loading...";
@@ -96,6 +111,27 @@ function incrementCounter() {
           </NestedComponent>
         </NestedComponent>
       </section>
+
+      <DemoCard title="Form Components Test">
+        <p>フォームコンポーネントのテスト（コンポーネント名の検出確認用）</p>
+        <div class="form-demo">
+          <FormInput
+            v-model="formName"
+            label="Name"
+            placeholder="Enter your name"
+          />
+          <FormInput
+            v-model="formEmail"
+            label="Email"
+            placeholder="Enter your email"
+          />
+          <div class="button-group">
+            <SubmitButton label="Submit" @click="handleFormSubmit" />
+            <SubmitButton label="Cancel" variant="secondary" @click="clearForm" />
+          </div>
+          <p v-if="formSubmitted" class="status">Form submitted!</p>
+        </div>
+      </DemoCard>
     </main>
   </div>
 </template>

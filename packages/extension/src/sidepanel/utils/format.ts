@@ -38,17 +38,30 @@ export function formatActionTitle(action: UserAction): string {
     return "Page |";
   }
 
+  const componentName = action.targetInfo?.framework?.selectedComponent;
+  const displayTarget = componentName || action.target || "";
+
   if (action.type === "click" && action.href) {
-    return `click link | ${action.target || ""}`.trim();
+    return `click link | ${displayTarget}`.trim();
   }
 
-  return `${action.type || "action"} | ${action.target || ""}`.trim();
+  return `${action.type || "action"} | ${displayTarget}`.trim();
 }
 
 export function formatActionDetail(action: UserAction): string {
   if (action.kind === "navigation") {
     return simplifyUrl(action.target || "");
   }
+
+  const componentName = action.targetInfo?.framework?.selectedComponent;
+  if (componentName && action.target) {
+    return action.target;
+  }
+
+  if (action.valueSnippet) {
+    return action.valueSnippet;
+  }
+
   return "";
 }
 
@@ -56,7 +69,15 @@ export function formatActionMarkdownLine(action: UserAction, index: number): str
   if (action.kind === "navigation") {
     return `${index + 1}. navigation | ${action.navigationKind || "url change"} | ${action.target || "-"}`;
   }
-  return `${index + 1}. ${action.type} | ${action.target || "-"} | ${action.valueSnippet || "-"}`;
+
+  const framework = action.targetInfo?.framework;
+  const componentName = framework?.selectedComponent;
+  const frameworkLabel = framework?.framework && framework.framework !== "DOM"
+    ? ` [${framework.framework}]`
+    : "";
+  const target = componentName || action.target || "-";
+
+  return `${index + 1}. ${action.type} | ${target}${frameworkLabel} | ${action.valueSnippet || "-"}`;
 }
 
 export function simplifyUrl(value: string): string {

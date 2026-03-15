@@ -31,7 +31,6 @@ MVP では以下だけを確実に実装する。
 
 MVP でやらないもの。
 
-- 高精度な React/Vue コンポーネント名の取得
 - 長時間の動画録画
 - 自動で再現手順を完全生成する機能
 - Safari 固有実装の先行対応
@@ -173,6 +172,7 @@ host permissions:
 - CSS selector candidate
 - XPath candidate
 - bounding rect
+- フレームワークコンポーネント情報（React / Vue 対応）
 
 ### `sidepanel app`
 
@@ -222,6 +222,14 @@ type SelectedArea = {
   ariaLabel?: string;
   textSnippet?: string;
   rect: { x: number; y: number; width: number; height: number };
+  framework?: FrameworkInfo;
+};
+
+type FrameworkInfo = {
+  framework: "React" | "Vue" | "DOM";
+  selectedComponent: string;
+  componentTrail: string[];
+  filePath?: string; // ソースマップから取得（開発環境のみ）
 };
 
 type UserAction = {
