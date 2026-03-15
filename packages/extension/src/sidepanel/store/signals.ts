@@ -67,6 +67,11 @@ export const selectedLabels = signal<Set<string>>(new Set());
 export const statusMessage = signal<string>("");
 export const captureStatusMessage = signal<string>("");
 
+// Per-tool status messages
+export const selectAreaStatus = signal<string>("");
+export const captureImageStatus = signal<string>("");
+export const recordingStatus = signal<string>("");
+
 export const canUndo = computed(() => (currentState.value.actionHistoryPast?.length ?? 0) > 0);
 export const canRedo = computed(() => (currentState.value.actionHistoryFuture?.length ?? 0) > 0);
 export const hasActions = computed(() => (currentState.value.actions?.length ?? 0) > 0);

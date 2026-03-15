@@ -4,8 +4,14 @@ import {
   activeTabId,
   currentState,
   recordingState,
-  captureStatusMessage,
   recordingButtonText,
+  isSelectingArea,
+  isCapturing,
+  selectAreaButtonText,
+  captureButtonText,
+  recordingStatus,
+  selectAreaStatus,
+  captureImageStatus,
 } from "../store/signals";
 import { decodeFrame } from "../utils/image";
 
@@ -46,8 +52,28 @@ export async function toggleRecording(): Promise<void> {
     await stopDebuggerRecording();
     state.recorder.stop();
     recordingButtonText.value = "Start Recording";
-    captureStatusMessage.value = "Stopping recording...";
+    recordingStatus.value = "";
     return;
+  }
+
+  // Stop other pickers if active
+  if (isSelectingArea.value) {
+    await chrome.runtime.sendMessage({
+      type: "STOP_PICKER",
+      tabId: activeTabId.value,
+    });
+    selectAreaButtonText.value = currentState.value.selectedArea ? "Select Again" : "Select Area";
+    isSelectingArea.value = false;
+    selectAreaStatus.value = "";
+  }
+  if (isCapturing.value) {
+    await chrome.runtime.sendMessage({
+      type: "STOP_PICKER",
+      tabId: activeTabId.value,
+    });
+    captureButtonText.value = "Start Capture";
+    isCapturing.value = false;
+    captureImageStatus.value = "";
   }
 
   try {
@@ -89,9 +115,9 @@ export async function toggleRecording(): Promise<void> {
 
     recorder.start();
     recordingButtonText.value = "Stop Recording";
-    captureStatusMessage.value = "Current tab recording started.";
+    recordingStatus.value = "Recording in progress...";
   } catch (error) {
-    captureStatusMessage.value = (error as Error).message;
+    recordingStatus.value = (error as Error).message;
   }
 }
 
@@ -105,7 +131,7 @@ export function removeRecording(id: string): void {
     ...state,
     recordings: (state.recordings || []).filter((item) => item.id !== id),
   };
-  captureStatusMessage.value = "Recording removed.";
+  recordingStatus.value = "";
 }
 
 function createRecordingCanvasStream(): { canvas: HTMLCanvasElement; stream: MediaStream } {
@@ -187,7 +213,7 @@ function finalizeRecording(): void {
   };
 
   recordingButtonText.value = "Start Recording";
-  captureStatusMessage.value = "Recording saved in the panel preview for human review.";
+  recordingStatus.value = "";
 }
 
 async function stopDebuggerRecording(): Promise<void> {

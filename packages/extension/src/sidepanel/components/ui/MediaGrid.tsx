@@ -4,13 +4,20 @@ import type { MediaItem } from "../../../shared/types";
 export interface MediaGridProps {
   items: MediaItem[];
   onRemove: (id: string) => void;
+  columns?: 1 | 2 | 3;
 }
 
-export function MediaGrid({ items, onRemove }: MediaGridProps): JSX.Element | null {
+const columnClasses = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+};
+
+export function MediaGrid({ items, onRemove, columns = 3 }: MediaGridProps): JSX.Element | null {
   if (items.length === 0) return null;
 
   return (
-    <div class="grid grid-cols-3 gap-2">
+    <div class={`grid ${columnClasses[columns]} gap-2`}>
       {items.map((item) => (
         <div
           key={item.id}

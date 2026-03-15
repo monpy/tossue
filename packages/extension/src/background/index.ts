@@ -60,6 +60,9 @@ async function handleMessage(
     case "CLEAR_SELECTED_AREA_HIGHLIGHT":
       await sendTabMessage(tabId, { type: "CLEAR_SELECTED_AREA_HIGHLIGHT" });
       return { cleared: true };
+    case "STOP_PICKER":
+      await sendTabMessage(tabId, { type: "STOP_PICKER" });
+      return { stopped: true };
     case "AREA_SELECTED":
       updateState(tabId, { selectedArea: message.payload as TabState["selectedArea"] });
       return await respondWithState(tabId);

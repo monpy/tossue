@@ -63,6 +63,12 @@ function installMessageListener() {
     if (message.type === "CLEAR_SELECTED_AREA_HIGHLIGHT") {
       clearSelectedAreaHighlight();
       sendResponse({ ok: true });
+      return;
+    }
+
+    if (message.type === "STOP_PICKER") {
+      stopAreaPicker();
+      sendResponse({ ok: true });
     }
   });
 }
@@ -148,8 +154,9 @@ function installUrlTracking() {
 }
 
 function startAreaPicker() {
+  // Stop any existing picker first
   if (overlayState.active) {
-    return;
+    stopAreaPicker();
   }
 
   overlayState.active = true;
@@ -163,8 +170,9 @@ function startAreaPicker() {
 }
 
 function startCapturePicker() {
+  // Stop any existing picker first
   if (overlayState.active) {
-    return;
+    stopAreaPicker();
   }
 
   overlayState.active = true;
@@ -531,30 +539,8 @@ function serializeElement(element) {
 }
 
 function selectRepresentativeElement(element) {
-  const baseText = normalizeWhitespace(element.textContent || "");
-  const baseRect = element.getBoundingClientRect();
-  const isTooBroad = baseText.length > 80 || baseRect.width * baseRect.height > 180000;
-  if (!isTooBroad) {
-    return element;
-  }
-
-  const candidates = [element, ...element.querySelectorAll("button,a,[role='button'],label,[aria-label],[data-testid],input,summary")];
-  let best = element;
-  let bestScore = scoreElementCandidate(element);
-
-  for (const candidate of candidates) {
-    if (!(candidate instanceof Element)) {
-      continue;
-    }
-
-    const score = scoreElementCandidate(candidate);
-    if (score > bestScore) {
-      best = candidate;
-      bestScore = score;
-    }
-  }
-
-  return best;
+  // Always return the element the user clicked on
+  return element;
 }
 
 function scoreElementCandidate(element) {
