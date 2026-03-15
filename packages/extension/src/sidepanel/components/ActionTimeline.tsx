@@ -20,7 +20,7 @@ import {
 } from "../hooks/useActions";
 import { highlightArea, clearHighlight } from "../hooks/useCapture";
 import { formatActionIndex, formatActionTitle, formatActionDetail } from "../utils/format";
-import { Button, Card } from "./ui";
+import { Button, Card, UndoIcon, RedoIcon, TrashIcon, CloseIcon } from "./ui";
 
 export function ActionTimeline() {
   const timeline = useComputed(() => unifiedTimeline.value);
@@ -75,7 +75,7 @@ export function ActionTimeline() {
             disabled={!canUndo.value}
             onClick={undoActions}
           >
-            ←
+            <UndoIcon />
           </Button>
           <Button
             id="redoActions"
@@ -85,7 +85,7 @@ export function ActionTimeline() {
             disabled={!canRedo.value}
             onClick={redoActions}
           >
-            →
+            <RedoIcon />
           </Button>
           <Button
             id="clearActions"
@@ -95,7 +95,7 @@ export function ActionTimeline() {
             disabled={!hasTimelineEntries.value}
             onClick={clearActions}
           >
-            ⊘
+            <TrashIcon />
           </Button>
         </div>
       </div>
@@ -219,11 +219,6 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
         onFocus={() => onHover(action)}
         onBlur={onLeave}
       >
-        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
-        <div class="action-row-copy">
-          <strong class="action-row-title">{label}</strong>
-          {detail && <span class="action-row-detail">{detail}</span>}
-        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -231,8 +226,13 @@ function ActionRow({ action, index, onHover, onLeave, onDelete, onTrimBefore }: 
           aria-label="Delete action"
           onClick={() => onDelete(action.id)}
         >
-          ×
+          <CloseIcon />
         </Button>
+        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
+        <div class="action-row-copy">
+          <strong class="action-row-title">{label}</strong>
+          {detail && <span class="action-row-detail" title={detail}>{detail}</span>}
+        </div>
       </article>
     </>
   );
@@ -264,13 +264,6 @@ function ConsoleRow({ entry, index, onDelete, onTrimBefore }: ConsoleRowProps) {
         </button>
       )}
       <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
-        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
-        <div class="action-row-copy">
-          <strong class="action-row-title">
-            {levelIcon} console.{entry.level}
-          </strong>
-          <span class="action-row-detail">{entry.message.slice(0, 100)}</span>
-        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -278,8 +271,15 @@ function ConsoleRow({ entry, index, onDelete, onTrimBefore }: ConsoleRowProps) {
           aria-label="Delete entry"
           onClick={() => onDelete(entry.id)}
         >
-          ×
+          <CloseIcon />
         </Button>
+        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
+        <div class="action-row-copy">
+          <strong class="action-row-title">
+            {levelIcon} console.{entry.level}
+          </strong>
+          <span class="action-row-detail" title={entry.message}>{entry.message.slice(0, 100)}</span>
+        </div>
       </article>
     </>
   );
@@ -320,13 +320,6 @@ function NetworkRow({ entry, index, onDelete, onTrimBefore }: NetworkRowProps) {
         </button>
       )}
       <article class={`action-row ${levelClass}`} data-entry-id={entry.id}>
-        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
-        <div class="action-row-copy">
-          <strong class="action-row-title">
-            🌐 {entry.method} {statusText}
-          </strong>
-          <span class="action-row-detail">{displayUrl.slice(0, 80)}</span>
-        </div>
         <Button
           variant="ghost"
           size="sm"
@@ -334,8 +327,15 @@ function NetworkRow({ entry, index, onDelete, onTrimBefore }: NetworkRowProps) {
           aria-label="Delete entry"
           onClick={() => onDelete(entry.id)}
         >
-          ×
+          <CloseIcon />
         </Button>
+        <span class="action-row-index">{formatActionIndex(index + 1)}</span>
+        <div class="action-row-copy">
+          <strong class="action-row-title">
+            🌐 {entry.method} {statusText}
+          </strong>
+          <span class="action-row-detail" title={entry.url}>{displayUrl.slice(0, 80)}</span>
+        </div>
       </article>
     </>
   );
