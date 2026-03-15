@@ -66,6 +66,15 @@ async function handleMessage(
     case "CAPTURE_RECT_SELECTED":
       updateState(tabId, { captureRect: message.payload as TabState["captureRect"] });
       return await respondWithState(tabId);
+    case "PICKER_CANCELLED":
+      chrome.runtime
+        .sendMessage({
+          type: "PICKER_CANCELLED",
+          tabId,
+          payload: message.payload,
+        })
+        .catch(() => {});
+      return {};
     case "CLEAR_SCREENSHOT":
       updateState(tabId, { captureRect: null, screenshots: [] });
       return await respondWithState(tabId);
