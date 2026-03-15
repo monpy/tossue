@@ -136,66 +136,68 @@ export function LabelSelector() {
       )}
 
       {hasRepo && !loading.value && (
-        <div class="label-chip-list" id="labelPresetList">
-          {allLabels.value.map((label) => {
-            const isSelected = selected.value.has(label.name);
-            const bgColor = isSelected ? `#${label.color}25` : undefined;
-            const borderColor = `#${label.color}`;
-            const textColor = isSelected ? getContrastColor(label.color) : undefined;
+        <>
+          <div class="label-chip-list" id="labelPresetList">
+            {allLabels.value.map((label) => {
+              const isSelected = selected.value.has(label.name);
+              const bgColor = isSelected ? `#${label.color}25` : undefined;
+              const borderColor = `#${label.color}`;
+              const textColor = isSelected ? getContrastColor(label.color) : undefined;
 
-            return (
-              <button
-                key={label.name}
-                type="button"
-                class={`label-chip${isSelected ? " active" : ""}${!label.isFromRepo ? " custom" : ""}`}
-                title={label.name}
-                onClick={() => toggleLabel(label.name)}
-                style={{
-                  "--label-color": `#${label.color}`,
-                  "--label-bg": bgColor,
-                  "--label-text": textColor,
-                  borderLeftColor: borderColor,
-                  borderLeftWidth: "3px",
-                }}
-              >
-                {isSelected && <span class="label-check">✓</span>}
-                <span>{label.name}</span>
-                {!label.isFromRepo && (
-                  <button
-                    type="button"
-                    class="label-chip-remove"
-                    title={`Remove ${label.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeCustomLabel(label.name);
-                    }}
-                  >
-                    ×
-                  </button>
-                )}
-              </button>
-            );
-          })}
-        </div>
+              return (
+                <button
+                  key={label.name}
+                  type="button"
+                  class={`label-chip${isSelected ? " active" : ""}${!label.isFromRepo ? " custom" : ""}`}
+                  title={label.name}
+                  onClick={() => toggleLabel(label.name)}
+                  style={{
+                    "--label-color": `#${label.color}`,
+                    "--label-bg": bgColor,
+                    "--label-text": textColor,
+                    borderLeftColor: borderColor,
+                    borderLeftWidth: "3px",
+                  }}
+                >
+                  {isSelected && <span class="label-check">✓</span>}
+                  <span>{label.name}</span>
+                  {!label.isFromRepo && (
+                    <button
+                      type="button"
+                      class="label-chip-remove"
+                      title={`Remove ${label.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCustomLabel(label.name);
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <div class="label-add-row">
+            <input
+              id="customLabelInput"
+              placeholder="Add custom label..."
+              value={customInput}
+              onInput={(e) => setCustomInput((e.target as HTMLInputElement).value)}
+              onKeyDown={handleKeyDown}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!customInput.trim()}
+              onClick={addCustomLabel}
+            >
+              Add
+            </Button>
+          </div>
+        </>
       )}
-
-      <div class="label-add-row">
-        <input
-          id="customLabelInput"
-          placeholder="Add custom label..."
-          value={customInput}
-          onInput={(e) => setCustomInput((e.target as HTMLInputElement).value)}
-          onKeyDown={handleKeyDown}
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={!customInput.trim()}
-          onClick={addCustomLabel}
-        >
-          Add
-        </Button>
-      </div>
     </div>
   );
 }
