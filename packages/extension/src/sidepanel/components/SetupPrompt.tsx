@@ -4,12 +4,15 @@ import {
   issueCreationSettings,
   activeSidepanelTab,
 } from "../store/signals";
-import { refreshHelperState } from "../hooks/useHelper";
+import { refreshHelperState, saveAuthToken } from "../hooks/useHelper";
 import { Card, Button } from "./ui";
 
 export function SetupPrompt() {
   const requirement = setupRequirement.value;
   const [isRetrying, setIsRetrying] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
 
   if (!requirement) {
     return null;
@@ -28,8 +31,26 @@ export function SetupPrompt() {
     }
   };
 
+  const handleConnect = async () => {
+    if (!tokenInput.trim()) {
+      setAuthError("Please enter a token");
+      return;
+    }
+    setIsConnecting(true);
+    setAuthError("");
+    const result = await saveAuthToken(tokenInput);
+    setIsConnecting(false);
+    if (result.ok) {
+      setTokenInput("");
+      await refreshHelperState();
+    } else {
+      setAuthError(result.error || "Failed to connect");
+    }
+  };
+
   const content = getContent(requirement.type);
-  const showRetry = requirement.type.startsWith("helper-");
+  const showRetry = requirement.type === "helper-not-reachable";
+  const showTokenInput = requirement.type === "helper-not-authenticated";
 
   return (
     <Card>
@@ -41,6 +62,31 @@ export function SetupPrompt() {
             <p class="text-xs text-muted m-0">{content.description}</p>
           </div>
         </div>
+
+        {/* Token input for helper-not-authenticated */}
+        {showTokenInput && (
+          <div class="grid gap-2">
+            <div class="auth-token-input-row">
+              <input
+                type="password"
+                placeholder="Paste token here..."
+                value={tokenInput}
+                onInput={(e) => setTokenInput((e.target as HTMLInputElement).value)}
+                class="auth-token-input"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConnect}
+                disabled={isConnecting}
+              >
+                {isConnecting ? "Verifying..." : "Connect"}
+              </Button>
+            </div>
+            {authError && <p class="auth-error">{authError}</p>}
+          </div>
+        )}
+
         <div class="flex gap-2 flex-wrap">
           {showRetry && (
             <Button
@@ -52,13 +98,15 @@ export function SetupPrompt() {
               {isRetrying ? "Checking..." : "Retry Connection"}
             </Button>
           )}
-          <Button
-            variant={showRetry ? "secondary" : "primary"}
-            size="sm"
-            onClick={goToSettings}
-          >
-            {content.action}
-          </Button>
+          {!showTokenInput && (
+            <Button
+              variant={showRetry ? "secondary" : "primary"}
+              size="sm"
+              onClick={goToSettings}
+            >
+              {content.action}
+            </Button>
+          )}
           <Button
             variant="secondary"
             size="sm"
@@ -101,6 +149,14 @@ function getContent(type: string): SetupContent {
         description:
           "The Tossue Helper app is not running. Start it to create issues via gh CLI.",
         action: "Setup Helper",
+      };
+    case "helper-not-authenticated":
+      return {
+        icon: "🔑",
+        title: "Connect to Helper",
+        description:
+          "Copy the token from Helper's tray menu (📋 Copy Token) and paste below.",
+        action: "Go to Settings",
       };
     case "helper-gh-not-installed":
       return {

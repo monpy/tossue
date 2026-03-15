@@ -4,17 +4,22 @@ use std::env;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::Stdio;
+use std::sync::Arc;
 
-use axum::extract::{Path, State};
-use axum::http::StatusCode;
+use axum::extract::{Path, Request, State};
+use axum::http::{header, HeaderValue, Method, StatusCode};
+use axum::middleware::{self, Next};
+use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
 use tauri::{ActivationPolicy, Manager, WindowEvent};
 use tokio::process::Command;
+use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 use tower_http::cors::CorsLayer;
 
@@ -23,12 +28,20 @@ const DEFAULT_PORT: u16 = 47321;
 #[derive(Clone)]
 struct AppState {
   port: u16,
+  auth: Arc<RwLock<AuthState>>,
+  app_handle: Option<tauri::AppHandle>,
+}
+
+#[derive(Default)]
+struct AuthState {
+  token: Option<String>,
 }
 
 struct MenuState<R: tauri::Runtime> {
   tray_menu: Menu<R>,
   status_item: MenuItem<R>,
   endpoint_item: MenuItem<R>,
+  token_item: MenuItem<R>,
   account_item: MenuItem<R>,
   repos_item: MenuItem<R>,
   install_item: MenuItem<R>,
@@ -120,6 +133,13 @@ struct ApiLabel {
   description: Option<String>,
 }
 
+#[derive(Serialize)]
+struct TokenStatusResponse {
+  authenticated: bool,
+  token_preview: Option<String>,
+}
+
+
 #[tokio::main]
 async fn main() {
   let port = env::var("TOSSUE_HELPER_PORT")
@@ -135,7 +155,11 @@ async fn main() {
       }
     })
     .setup(move |app| {
-      let state = AppState { port };
+      let state = AppState {
+        port,
+        auth: Arc::new(RwLock::new(AuthState::default())),
+        app_handle: None,
+      };
       app.manage(state.clone());
       app.set_activation_policy(ActivationPolicy::Accessory);
 
@@ -148,21 +172,29 @@ async fn main() {
         false,
         None::<&str>,
       )?;
+      let token_item = MenuItem::with_id(app, "token-line", "Token: loading...", false, None::<&str>)?;
       let account_item = MenuItem::with_id(app, "account-line", "Account: -", false, None::<&str>)?;
       let repos_item = MenuItem::with_id(app, "repos-line", "Repositories: -", false, None::<&str>)?;
       let install_item = MenuItem::with_id(app, "install-gh", "Install gh from cli.github.com", true, None::<&str>)?;
+      let separator = PredefinedMenuItem::separator(app)?;
+      let copy_token_item = MenuItem::with_id(app, "copy-token", "📋 Copy Token", true, None::<&str>)?;
+      let rotate_token_item = MenuItem::with_id(app, "rotate-token", "🔄 Rotate Token", true, None::<&str>)?;
+      let separator2 = PredefinedMenuItem::separator(app)?;
       let refresh_item = MenuItem::with_id(app, "refresh-status", "Refresh Status", true, None::<&str>)?;
       let login_item = MenuItem::with_id(app, "login-terminal", "Login in Terminal", true, None::<&str>)?;
       let quit_item = MenuItem::with_id(app, "quit-helper", "Quit Tossue Helper", true, None::<&str>)?;
-      let separator = PredefinedMenuItem::separator(app)?;
 
       tray_menu.append_items(&[
         &status_item,
         &endpoint_item,
+        &token_item,
         &account_item,
         &repos_item,
         &install_item,
         &separator,
+        &copy_token_item,
+        &rotate_token_item,
+        &separator2,
         &refresh_item,
         &login_item,
         &quit_item,
@@ -172,6 +204,7 @@ async fn main() {
         tray_menu: tray_menu.clone(),
         status_item: status_item.clone(),
         endpoint_item: endpoint_item.clone(),
+        token_item: token_item.clone(),
         account_item: account_item.clone(),
         repos_item: repos_item.clone(),
         install_item: install_item.clone(),
@@ -185,7 +218,7 @@ async fn main() {
         .icon_as_template(true)
         .menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
-          "status-line" | "endpoint-line" => {}
+          "status-line" | "endpoint-line" | "token-line" => {}
           "install-gh" => {
             #[cfg(target_os = "macos")]
             {
@@ -198,6 +231,32 @@ async fn main() {
                   .await;
               });
             }
+          }
+          "copy-token" => {
+            let handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+              let state = handle.state::<AppState>();
+              let auth = state.auth.read().await;
+              if let Some(ref token) = auth.token {
+                if let Ok(mut clipboard) = arboard::Clipboard::new() {
+                  let _ = clipboard.set_text(token.clone());
+                }
+              }
+            });
+          }
+          "rotate-token" => {
+            let handle = app.clone();
+            tauri::async_runtime::spawn(async move {
+              let state = handle.state::<AppState>();
+              let new_token = generate_token();
+              {
+                let mut auth = state.auth.write().await;
+                auth.token = Some(new_token.clone());
+              }
+              let _ = save_token(&new_token).await;
+              let _ = update_token_menu(&handle).await;
+              eprintln!("[AUTH] Token rotated");
+            });
           }
           "refresh-status" => {
             let handle = app.clone();
@@ -225,8 +284,11 @@ async fn main() {
 
       let _ = tray_builder.build(app)?;
 
+      let server_handle = app.handle().clone();
+      let mut server_state = state.clone();
+      server_state.app_handle = Some(server_handle);
       tauri::async_runtime::spawn(async move {
-        if let Err(error) = run_http_server(state).await {
+        if let Err(error) = run_http_server(server_state).await {
           eprintln!("Tossue helper server failed: {error}");
         }
       });
@@ -243,15 +305,43 @@ async fn main() {
 }
 
 async fn run_http_server(state: AppState) -> Result<(), String> {
-  let router = Router::new()
+  // Load or generate token on startup
+  let token = load_or_create_token().await;
+  {
+    let mut auth = state.auth.write().await;
+    auth.token = Some(token);
+  }
+
+  // Update tray menu with token preview
+  if let Some(ref handle) = state.app_handle {
+    let _ = update_token_menu(handle).await;
+  }
+
+  // Public routes (no auth required)
+  let public_routes = Router::new()
     .route("/health", get(health))
+    .route("/auth/status", get(auth_status))
+    .with_state(state.clone());
+
+  // Protected routes (auth required)
+  let protected_routes = Router::new()
     .route("/github/status", get(github_status))
     .route("/github/login", post(github_login))
     .route("/github/repositories", get(github_repositories))
     .route("/github/repos/:owner/:repo/labels", get(repository_labels))
     .route("/issues", post(create_issue))
-    .layer(CorsLayer::very_permissive())
+    .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
     .with_state(state.clone());
+
+  let cors = CorsLayer::new()
+    .allow_origin("*".parse::<HeaderValue>().unwrap())
+    .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
+    .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
+
+  let router = Router::new()
+    .merge(public_routes)
+    .merge(protected_routes)
+    .layer(cors);
 
   let addr = SocketAddr::from(([127, 0, 0, 1], state.port));
   let listener = tokio::net::TcpListener::bind(addr)
@@ -261,6 +351,55 @@ async fn run_http_server(state: AppState) -> Result<(), String> {
   axum::serve(listener, router)
     .await
     .map_err(|error| format!("helper server crashed: {error}"))
+}
+
+async fn auth_middleware(
+  State(state): State<AppState>,
+  request: Request,
+  next: Next,
+) -> Response {
+  let auth_header = request
+    .headers()
+    .get(header::AUTHORIZATION)
+    .and_then(|value| value.to_str().ok());
+
+  let provided_token = auth_header.and_then(|header| header.strip_prefix("Bearer "));
+
+  let auth = state.auth.read().await;
+  let is_valid = match (&auth.token, provided_token) {
+    (Some(expected), Some(provided)) => expected == provided,
+    _ => false,
+  };
+  drop(auth);
+
+  if is_valid {
+    next.run(request).await
+  } else {
+    (
+      StatusCode::UNAUTHORIZED,
+      Json(ErrorResponse {
+        error: "Unauthorized. Copy the token from Tossue Helper tray menu and paste it in the extension settings.".into(),
+      }),
+    )
+      .into_response()
+  }
+}
+
+async fn auth_status(State(state): State<AppState>) -> Json<TokenStatusResponse> {
+  let auth = state.auth.read().await;
+  let has_token = auth.token.is_some();
+  let token_preview = auth.token.as_ref().map(|t| {
+    if t.len() > 8 {
+      format!("{}...{}", &t[..4], &t[t.len()-4..])
+    } else {
+      t.clone()
+    }
+  });
+
+  Json(TokenStatusResponse {
+    authenticated: has_token,
+    token_preview,
+  })
 }
 
 async fn health(State(state): State<AppState>) -> Json<HealthResponse> {
@@ -689,4 +828,81 @@ fn ensure_install_item_hidden<R: tauri::Runtime>(menu_state: &MenuState<R>) -> t
   };
 
   menu_state.tray_menu.remove_at(position).map(|_| ())
+}
+
+// Token management functions
+
+fn get_token_file_path() -> PathBuf {
+  let config_dir = dirs::config_dir()
+    .or_else(dirs::home_dir)
+    .unwrap_or_else(|| PathBuf::from("."));
+  config_dir.join("tossue").join("token")
+}
+
+fn generate_token() -> String {
+  rand::thread_rng()
+    .sample_iter(rand::distributions::Alphanumeric)
+    .take(48)
+    .map(char::from)
+    .collect()
+}
+
+async fn load_or_create_token() -> String {
+  let path = get_token_file_path();
+
+  // Try to load existing token
+  if let Ok(token) = tokio::fs::read_to_string(&path).await {
+    let token = token.trim().to_string();
+    if !token.is_empty() {
+      eprintln!("[AUTH] Loaded existing token from {:?}", path);
+      return token;
+    }
+  }
+
+  // Generate new token
+  let token = generate_token();
+  let _ = save_token(&token).await;
+  eprintln!("[AUTH] Generated new token and saved to {:?}", path);
+  token
+}
+
+async fn save_token(token: &str) -> Result<(), String> {
+  let path = get_token_file_path();
+
+  // Ensure parent directory exists
+  if let Some(parent) = path.parent() {
+    tokio::fs::create_dir_all(parent)
+      .await
+      .map_err(|e| format!("failed to create config directory: {e}"))?;
+  }
+
+  tokio::fs::write(&path, token)
+    .await
+    .map_err(|e| format!("failed to write token file: {e}"))?;
+
+  // Set file permissions to owner-only (Unix)
+  #[cfg(unix)]
+  {
+    use std::os::unix::fs::PermissionsExt;
+    let permissions = std::fs::Permissions::from_mode(0o600);
+    let _ = std::fs::set_permissions(&path, permissions);
+  }
+
+  Ok(())
+}
+
+async fn update_token_menu<R: tauri::Runtime>(handle: &tauri::AppHandle<R>) -> tauri::Result<()> {
+  let state = handle.state::<AppState>();
+  let auth = state.auth.read().await;
+
+  let token_text = auth.token.as_ref().map(|t| {
+    if t.len() > 8 {
+      format!("🔑 Token: {}...{}", &t[..4], &t[t.len()-4..])
+    } else {
+      format!("🔑 Token: {}", t)
+    }
+  }).unwrap_or_else(|| "🔑 Token: none".to_string());
+
+  let menu_state = handle.state::<MenuState<R>>();
+  menu_state.token_item.set_text(&token_text)
 }

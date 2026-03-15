@@ -1,18 +1,36 @@
-import { currentHelper, statusMessage, repositoryLabels, isLoadingLabels } from "../store/signals";
+import { currentHelper, statusMessage, repositoryLabels, isLoadingLabels, helperAuthState } from "../store/signals";
 import type { RepositoryLabel } from "../../shared/types";
 
 const HELPER_BASE_URL = "http://127.0.0.1:47321";
+const AUTH_TOKEN_KEY = "tossue_helper_auth_token";
 
 export function useHelper() {
   return {
     refreshHelperState,
     startHelperLogin,
+    loadAuthToken,
+    saveAuthToken,
+    verifyToken,
+    clearAuthToken,
   };
 }
 
 export async function refreshHelperState() {
   try {
-    const health = await helperGet("/health");
+    // /health is public (no auth required)
+    const health = await helperGet("/health", false);
+
+    // Check if we're authenticated with helper
+    if (!helperAuthState.value.authenticated) {
+      currentHelper.value = {
+        reachable: Boolean(health.ok),
+        health,
+        github: null,
+        repositories: [],
+      };
+      return;
+    }
+
     const github = await helperGet("/github/status");
     let repositories: { name_with_owner: string }[] = [];
 
@@ -49,24 +67,106 @@ export async function startHelperLogin() {
   }
 }
 
-async function helperGet(path: string) {
-  const response = await fetch(`${HELPER_BASE_URL}${path}`);
+function getAuthHeaders(): HeadersInit {
+  const token = helperAuthState.value.token;
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
+async function helperGet(path: string, requireAuth = true) {
+  const headers: HeadersInit = requireAuth ? getAuthHeaders() : {};
+  const response = await fetch(`${HELPER_BASE_URL}${path}`, { headers });
   const payload = await response.json();
   if (!response.ok) {
+    if (response.status === 401) {
+      helperAuthState.value = { ...helperAuthState.value, authenticated: false };
+    }
     throw new Error(payload.error || `Helper request failed: ${path}`);
   }
   return payload;
 }
 
-async function helperPost(path: string) {
+async function helperPost(path: string, body?: unknown, requireAuth = true) {
+  const headers: HeadersInit = {
+    ...(requireAuth ? getAuthHeaders() : {}),
+    ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+  };
   const response = await fetch(`${HELPER_BASE_URL}${path}`, {
     method: "POST",
+    headers,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   const payload = await response.json();
   if (!response.ok) {
+    if (response.status === 401) {
+      helperAuthState.value = { ...helperAuthState.value, authenticated: false };
+    }
     throw new Error(payload.error || `Helper request failed: ${path}`);
   }
   return payload;
+}
+
+// Load auth token from chrome.storage on startup
+export async function loadAuthToken(): Promise<void> {
+  try {
+    const result = await chrome.storage.local.get(AUTH_TOKEN_KEY);
+    const token = result[AUTH_TOKEN_KEY];
+    if (token) {
+      // Verify the token is still valid
+      const isValid = await verifyToken(token);
+      if (isValid) {
+        helperAuthState.value = {
+          authenticated: true,
+          token,
+        };
+        return;
+      }
+    }
+    helperAuthState.value = { authenticated: false, token: null };
+  } catch {
+    helperAuthState.value = { authenticated: false, token: null };
+  }
+}
+
+// Save token and verify it
+export async function saveAuthToken(token: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmedToken = token.trim();
+  if (!trimmedToken) {
+    return { ok: false, error: "Token cannot be empty" };
+  }
+
+  const isValid = await verifyToken(trimmedToken);
+  if (!isValid) {
+    return { ok: false, error: "Invalid token. Make sure you copied the correct token from Helper." };
+  }
+
+  await chrome.storage.local.set({ [AUTH_TOKEN_KEY]: trimmedToken });
+  helperAuthState.value = {
+    authenticated: true,
+    token: trimmedToken,
+  };
+  return { ok: true };
+}
+
+// Verify token against Helper
+export async function verifyToken(token: string): Promise<boolean> {
+  try {
+    // Try to access a protected endpoint with the token
+    const response = await fetch(`${HELPER_BASE_URL}/github/status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+// Clear auth token
+export async function clearAuthToken(): Promise<void> {
+  await chrome.storage.local.remove(AUTH_TOKEN_KEY);
+  helperAuthState.value = { authenticated: false, token: null };
 }
 
 export async function createIssueViaHelper(
@@ -75,16 +175,21 @@ export async function createIssueViaHelper(
   body: string,
   labels: string[]
 ): Promise<{ issue_url: string }> {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders(),
+  };
   const response = await fetch(`${HELPER_BASE_URL}/issues`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({ repo, title, body, labels }),
   });
 
   const payload = await response.json();
   if (!response.ok) {
+    if (response.status === 401) {
+      helperAuthState.value = { ...helperAuthState.value, authenticated: false };
+    }
     throw new Error(payload.error || "Tossue Helper failed to create the issue.");
   }
   return payload;

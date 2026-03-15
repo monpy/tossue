@@ -53,6 +53,15 @@ export const currentHelper = signal<HelperState>({
   repositories: [],
 });
 
+// Helper authentication state
+export const helperAuthState = signal<{
+  authenticated: boolean;
+  token: string | null;
+}>({
+  authenticated: false,
+  token: null,
+});
+
 export const recordingState = signal<RecordingState>({
   stream: null,
   recorder: null,
@@ -242,6 +251,7 @@ export const needsSetup = computed(() => {
 export type SetupRequirement =
   | { type: "github-api-not-connected" }
   | { type: "helper-not-reachable" }
+  | { type: "helper-not-authenticated" }
   | { type: "helper-gh-not-installed" }
   | { type: "helper-gh-not-authenticated" }
   | null;
@@ -264,6 +274,10 @@ export const setupRequirement = computed<SetupRequirement>(() => {
       const helper = currentHelper.value;
       if (!helper.reachable) {
         return { type: "helper-not-reachable" };
+      }
+      // Check if extension is authenticated with helper
+      if (!helperAuthState.value.authenticated) {
+        return { type: "helper-not-authenticated" };
       }
       if (!helper.github?.gh_installed) {
         return { type: "helper-gh-not-installed" };

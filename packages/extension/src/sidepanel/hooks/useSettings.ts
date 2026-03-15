@@ -14,7 +14,7 @@ import {
   STORAGE_KEYS,
   DEFAULT_ISSUE_CREATION_SETTINGS,
 } from "../../shared/types";
-import { refreshHelperState } from "./useHelper";
+import { refreshHelperState, loadAuthToken } from "./useHelper";
 
 /**
  * 設定の読み込み・保存を管理するフック
@@ -63,6 +63,8 @@ export async function setCreateMethod(method: IssueCreateMethod) {
   // モード切り替え時に接続状態を再チェック
   switch (method) {
     case "gh-cli":
+      // トークン検証後に Helper 状態を更新
+      await loadAuthToken();
       await refreshHelperState();
       break;
     case "github-api":
