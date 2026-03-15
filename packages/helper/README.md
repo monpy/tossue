@@ -2,12 +2,50 @@
 
 Tauri ベースのローカル helper です。Chrome extension から localhost API 経由で呼ばれ、GitHub CLI (`gh`) を使って Issue を作成します。
 
-## Planned Endpoints
+## Endpoints
 
 - `GET /health`
 - `GET /github/status`
 - `GET /github/repositories`
+- `GET /github/repos/:owner/:repo/labels` - リポジトリのラベル一覧を取得
 - `POST /issues`
+
+### GET /github/repos/:owner/:repo/labels
+
+リポジトリに定義されているラベル一覧を取得する。
+
+**Request:**
+
+```
+GET /github/repos/owner/repo/labels
+```
+
+**Response:**
+
+```json
+{
+  "labels": [
+    {
+      "name": "bug",
+      "color": "d73a4a",
+      "description": "Something isn't working"
+    },
+    {
+      "name": "enhancement",
+      "color": "a2eeef",
+      "description": "New feature or request"
+    }
+  ]
+}
+```
+
+**Error Response:**
+
+```json
+{
+  "error": "failed to fetch labels: repository not found"
+}
+```
 
 ## Requirements
 

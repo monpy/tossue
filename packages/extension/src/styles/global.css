@@ -381,12 +381,19 @@ label span {
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
 .label-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
+  background: var(--label-bg, var(--accent));
+  border-color: var(--label-color, var(--accent));
+  color: var(--label-text, white);
+}
+
+.label-check {
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .label-chip-remove {
@@ -406,7 +413,7 @@ label span {
 }
 
 .label-chip.active .label-chip-remove {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .label-add-row {

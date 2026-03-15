@@ -1,4 +1,5 @@
-import { currentHelper, statusMessage } from "../store/signals";
+import { currentHelper, statusMessage, repositoryLabels, isLoadingLabels } from "../store/signals";
+import type { RepositoryLabel } from "../../shared/types";
 
 const HELPER_BASE_URL = "http://127.0.0.1:47321";
 
@@ -87,4 +88,27 @@ export async function createIssueViaHelper(
     throw new Error(payload.error || "Tossue Helper failed to create the issue.");
   }
   return payload;
+}
+
+export async function fetchRepositoryLabels(repo: string): Promise<RepositoryLabel[]> {
+  const parts = repo.split("/");
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    repositoryLabels.value = [];
+    return [];
+  }
+
+  const [owner, repoName] = parts;
+
+  isLoadingLabels.value = true;
+  try {
+    const response = await helperGet(`/github/repos/${owner}/${repoName}/labels`);
+    const labels = response.labels || [];
+    repositoryLabels.value = labels;
+    return labels;
+  } catch {
+    repositoryLabels.value = [];
+    return [];
+  } finally {
+    isLoadingLabels.value = false;
+  }
 }
