@@ -33,13 +33,14 @@ export function LabelSelector() {
     const h = helper.value;
     const isConnected = h.reachable && h.github?.authenticated;
     const currentRepo = repo.value;
+    const isValid = h.repositories.some((r) => r.name_with_owner === currentRepo);
 
-    if (isConnected && currentRepo && currentRepo.includes("/")) {
+    if (isConnected && isValid) {
       fetchRepositoryLabels(currentRepo);
     } else {
       repositoryLabels.value = [];
     }
-  }, [repo.value, helper.value.reachable, helper.value.github?.authenticated]);
+  }, [repo.value, helper.value.reachable, helper.value.github?.authenticated, helper.value.repositories]);
 
   const allLabels = useComputed((): LabelDisplayItem[] => {
     const items: LabelDisplayItem[] = [];
@@ -110,8 +111,10 @@ export function LabelSelector() {
   };
 
   const isHelperConnected = helper.value.reachable && helper.value.github?.authenticated;
-  const hasRepo = repo.value && repo.value.includes("/");
-  const canShowLabels = isHelperConnected && hasRepo;
+  const isValidRepo = helper.value.repositories.some(
+    (r) => r.name_with_owner === repo.value
+  );
+  const canShowLabels = isHelperConnected && isValidRepo;
 
   return (
     <div class="full label-editor">
@@ -121,7 +124,7 @@ export function LabelSelector() {
         <p class="text-muted text-xs">Connect to Tossue Helper to use labels</p>
       )}
 
-      {isHelperConnected && !hasRepo && (
+      {isHelperConnected && !isValidRepo && (
         <p class="text-muted text-xs">Select a repository to see available labels</p>
       )}
 
