@@ -7,6 +7,7 @@ import { Button } from "./components/ui";
 import { TabBar } from "./components/tabs/TabBar";
 import { MainTab } from "./components/MainTab";
 import { SettingsTab } from "./components/SettingsTab";
+import { WatchedTabIndicator } from "./components/WatchedTabIndicator";
 import { activeSidepanelTab } from "./store/signals";
 
 export function App() {
@@ -27,6 +28,8 @@ export function App() {
           Refresh
         </Button>
       </header>
+
+      <WatchedTabIndicator />
 
       <TabBar />
 

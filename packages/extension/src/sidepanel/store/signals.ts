@@ -12,6 +12,7 @@ import type {
   IssueCreationSettings,
   GitHubOAuthState,
   GitHubOAuthRepository,
+  WatchedTabInfo,
 } from "../../shared/types";
 import { DEFAULT_ISSUE_CREATION_SETTINGS } from "../../shared/types";
 import { buildMarkdown } from "../utils/markdown";
@@ -45,6 +46,18 @@ function createEmptyState(): TabState {
 }
 
 export const activeTabId = signal<number | null>(null);
+
+// Watched tab info (the tab we're collecting data for)
+export const watchedTabInfo = signal<WatchedTabInfo | null>(null);
+
+// Current browser active tab ID (for detecting tab switches)
+export const currentActiveTabId = signal<number | null>(null);
+
+// Whether the watched tab differs from the current active tab
+export const isWatchingDifferentTab = computed(() => {
+  if (!watchedTabInfo.value || !currentActiveTabId.value) return false;
+  return watchedTabInfo.value.id !== currentActiveTabId.value;
+});
 export const currentState = signal<TabState>(createEmptyState());
 export const currentHelper = signal<HelperState>({
   reachable: false,

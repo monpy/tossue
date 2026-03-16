@@ -12,6 +12,8 @@ import {
   selectAreaStatus,
   captureImageStatus,
   DEFAULT_LABEL_PRESETS,
+  watchedTabInfo,
+  currentActiveTabId,
 } from "../store/signals";
 import { refreshHelperState, loadAuthToken } from "./useHelper";
 import type { TabState, Message } from "../../shared/types";
@@ -54,8 +56,22 @@ export function useTabState() {
       }
     };
 
+    // Listen for tab activation changes to update currentActiveTabId
+    const handleTabActivated = (activeInfo: chrome.tabs.TabActiveInfo) => {
+      chrome.windows.getCurrent().then((currentWindow) => {
+        if (activeInfo.windowId === currentWindow.id) {
+          currentActiveTabId.value = activeInfo.tabId;
+        }
+      });
+    };
+
     chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+    chrome.tabs.onActivated.addListener(handleTabActivated);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+      chrome.tabs.onActivated.removeListener(handleTabActivated);
+    };
   }, []);
 
   return {
@@ -67,6 +83,17 @@ export function useTabState() {
 async function bootstrap() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId.value = tab?.id ?? null;
+
+  // Set watched tab info
+  if (tab?.id) {
+    watchedTabInfo.value = {
+      id: tab.id,
+      title: tab.title || "",
+      url: tab.url || "",
+    };
+    currentActiveTabId.value = tab.id;
+  }
+
   await Promise.all([loadLabelPresets(), loadIssueOptions(), loadAuthToken()]);
   await Promise.all([refreshState(), refreshHelperState()]);
 }
@@ -199,4 +226,26 @@ export async function resetStateAfterCreate() {
   // Reset button states
   selectAreaButtonText.value = "Select Area";
   captureButtonText.value = "Start Capture";
+}
+
+export async function switchToCurrentTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+
+  // Reset state for the new tab
+  await resetStateAfterCreate();
+
+  // Update tab IDs
+  activeTabId.value = tab.id;
+  currentActiveTabId.value = tab.id;
+
+  // Update watched tab info
+  watchedTabInfo.value = {
+    id: tab.id,
+    title: tab.title || "",
+    url: tab.url || "",
+  };
+
+  // Refresh state for the new tab
+  await refreshState();
 }
