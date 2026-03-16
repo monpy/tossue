@@ -38,7 +38,8 @@ export type MessageType =
   | "TAB_RECORDING_FRAME"
   | "TAB_RECORDING_STOPPED"
   | "DEVTOOLS_STATUS_UPDATE"
-  | "GET_DEVTOOLS_STATUS";
+  | "GET_DEVTOOLS_STATUS"
+  | "RESET_STATE";
 
 export type Message = {
   type: MessageType;
