@@ -439,6 +439,22 @@ async function sendTabMessage(
     throw new Error("Unable to resolve the active tab.");
   }
 
+  // First, try to ping the content script to see if it's alive
+  try {
+    await chrome.tabs.sendMessage(tabId, { type: "PING" });
+  } catch (error) {
+    // Content script not responding, inject it
+    if (shouldRetryContentScript(error)) {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content.js"],
+      });
+      // Wait a bit for the script to initialize
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  // Now send the actual message
   try {
     return await chrome.tabs.sendMessage(tabId, message);
   } catch (error) {
@@ -446,10 +462,12 @@ async function sendTabMessage(
       throw error;
     }
 
+    // Last resort: inject and retry
     await chrome.scripting.executeScript({
       target: { tabId },
       files: ["content.js"],
     });
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     return await chrome.tabs.sendMessage(tabId, message);
   }
