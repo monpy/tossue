@@ -3,6 +3,11 @@
   "name": "Tossue",
   "version": "0.1.0",
   "description": "Collects structured debugging context and drafts GitHub issues for AI-assisted bug fixing.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
   "permissions": [
     "activeTab",
     "debugger",
