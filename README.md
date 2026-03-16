@@ -1,6 +1,54 @@
 # Tossue
 
+A Chrome extension that captures structured debugging context from your browser and creates GitHub issues that both humans and AI can work with effectively.
+
 ブラウザ上で発生した不具合を、構造化されたコンテキストとともに GitHub Issue として記録できる Chrome 拡張機能です。AI と人間の両方が扱いやすいバグレポートを生成します。
+
+---
+
+**[English](#features)** | **[日本語](#主な機能)**
+
+---
+
+## Features
+
+- **Area Selection** — Click to select target elements on the page, automatically collecting DOM information
+- **Auto-collected Debug Context** — Automatically captures console errors, network errors, and user action logs
+- **Component Detection** — Automatically detects React/Next.js and Vue 3/Nuxt 3 component hierarchies
+- **GitHub Issue Creation** — Generates structured Markdown from collected data and creates issues directly
+- **Label Management** — Fetches repository labels and attaches them to issues
+- **Helper App Integration** — Securely communicates with GitHub API via local Tauri app
+
+## Installation
+
+### Chrome Web Store (Coming Soon)
+
+> Currently in preparation. Link will be available after release.
+
+### Manual Installation (Developer Mode)
+
+```bash
+git clone https://github.com/monpy/tossue.git
+cd tossue
+npm install
+npm run build:extension
+```
+
+1. Open `chrome://extensions` in Chrome
+2. Enable **Developer mode** (toggle in top right)
+3. Click **Load unpacked**
+4. Select the `packages/extension/dist` directory
+
+## Quick Start
+
+1. **Open Side Panel** — Click the Tossue icon in the toolbar
+2. **Select Repository** — Choose the repository for the issue
+3. **Enter Bug Info** — Fill in title, summary, and expected behavior
+4. **Select Area** (optional) — Click `Select Area` and select the target element on the page
+5. **Review Preview** — Check the generated Markdown
+6. **Create Issue** — Click the `Create Issue` button
+
+---
 
 ## 主な機能
 
@@ -108,6 +156,6 @@ packages/
 - [リリースプロセス](./docs/release-process.md)
 - [コントリビューション](./docs/contributing.md)
 
-## ライセンス
+## ライセンス / License
 
 [MIT License](./LICENSE)
