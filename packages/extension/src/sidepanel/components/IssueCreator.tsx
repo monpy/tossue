@@ -90,12 +90,13 @@ export function IssueCreator() {
     const body = markdown.value;
     const title = issueTitle.value;
 
-    if (!draft.summary) {
+    const skipBuiltin = settings.customApi.enabled && settings.customApi.skipBuiltinCreate;
+
+    // Title validation is only required for modes that create actual issues
+    if (!draft.summary && method !== "copy" && !skipBuiltin) {
       statusMessage.value = "Issue Title を入力してください。";
       return;
     }
-
-    const skipBuiltin = settings.customApi.enabled && settings.customApi.skipBuiltinCreate;
 
     // Built-in mode (unless skipped for Custom API only mode)
     if (!skipBuiltin) {

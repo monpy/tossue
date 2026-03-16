@@ -138,3 +138,9 @@ export type RecordingState = {
 export type IssueOptions = {
   includeActions: boolean;
 };
+
+export type WatchedTabInfo = {
+  id: number;
+  title: string;
+  url: string;
+};

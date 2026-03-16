@@ -35,6 +35,9 @@ export function CaptureTools() {
       <div class="section-title-row">
         <h2 class="text-base font-bold">Captured Context</h2>
       </div>
+      <p class="text-xs text-muted -mt-1">
+        うまく動かない場合はページをリロードしてください
+      </p>
       <div class="capture-tool-grid">
         <Card variant="nested">
           <div class="capture-tool-head">

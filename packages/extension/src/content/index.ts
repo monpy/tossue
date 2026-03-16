@@ -81,6 +81,11 @@ function handleFrameworkComponentResult(payload) {
 
 function installMessageListener() {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === "PING") {
+      sendResponse({ ok: true, pong: true });
+      return;
+    }
+
     if (message.type === "START_AREA_PICKER") {
       startAreaPicker();
       sendResponse({ ok: true });

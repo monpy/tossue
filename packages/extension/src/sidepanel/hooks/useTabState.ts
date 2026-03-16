@@ -11,7 +11,10 @@ import {
   isCapturing,
   selectAreaStatus,
   captureImageStatus,
+  recordingStatus,
   DEFAULT_LABEL_PRESETS,
+  watchedTabInfo,
+  currentActiveTabId,
 } from "../store/signals";
 import { refreshHelperState, loadAuthToken } from "./useHelper";
 import type { TabState, Message } from "../../shared/types";
@@ -54,8 +57,22 @@ export function useTabState() {
       }
     };
 
+    // Listen for tab activation changes to update currentActiveTabId
+    const handleTabActivated = (activeInfo: chrome.tabs.TabActiveInfo) => {
+      chrome.windows.getCurrent().then((currentWindow) => {
+        if (activeInfo.windowId === currentWindow.id) {
+          currentActiveTabId.value = activeInfo.tabId;
+        }
+      });
+    };
+
     chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+    chrome.tabs.onActivated.addListener(handleTabActivated);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(handleMessage);
+      chrome.tabs.onActivated.removeListener(handleTabActivated);
+    };
   }, []);
 
   return {
@@ -67,6 +84,17 @@ export function useTabState() {
 async function bootstrap() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   activeTabId.value = tab?.id ?? null;
+
+  // Set watched tab info
+  if (tab?.id) {
+    watchedTabInfo.value = {
+      id: tab.id,
+      title: tab.title || "",
+      url: tab.url || "",
+    };
+    currentActiveTabId.value = tab.id;
+  }
+
   await Promise.all([loadLabelPresets(), loadIssueOptions(), loadAuthToken()]);
   await Promise.all([refreshState(), refreshHelperState()]);
 }
@@ -199,4 +227,56 @@ export async function resetStateAfterCreate() {
   // Reset button states
   selectAreaButtonText.value = "Select Area";
   captureButtonText.value = "Start Capture";
+}
+
+export async function switchToCurrentTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+
+  // Update tab IDs first
+  activeTabId.value = tab.id;
+  currentActiveTabId.value = tab.id;
+
+  // Update watched tab info
+  watchedTabInfo.value = {
+    id: tab.id,
+    title: tab.title || "",
+    url: tab.url || "",
+  };
+
+  // Reset background state for the new tab to start fresh
+  await chrome.runtime.sendMessage({
+    type: "RESET_STATE",
+    tabId: tab.id,
+  });
+
+  // Clear local state
+  const repoToKeep = currentState.value.draft.repo;
+  currentState.value = {
+    ...currentState.value,
+    draft: {
+      repo: repoToKeep,
+      summary: "",
+      currentBehavior: "",
+      expectedBehavior: "",
+      labels: [],
+    },
+    screenshots: [],
+    recordings: [],
+    consoleEntries: [],
+    networkEntries: [],
+    selectedArea: null,
+    captureRect: null,
+    actions: [],
+  };
+  selectedLabels.value = new Set();
+
+  // Reset button texts and active states
+  selectAreaButtonText.value = "Select Area";
+  captureButtonText.value = "Start Capture";
+  isSelectingArea.value = false;
+  isCapturing.value = false;
+  selectAreaStatus.value = "";
+  captureImageStatus.value = "";
+  recordingStatus.value = "";
 }
