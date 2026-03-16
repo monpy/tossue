@@ -1,3 +1,4 @@
+import { useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import {
   currentState,
@@ -21,7 +22,13 @@ export function ReportForm() {
   const oauthRepos = useComputed(() => oauthRepositories.value);
   const isLoadingRepos = useComputed(() => isLoadingOAuthRepos.value);
 
+  // IME composition state tracking
+  const isComposing = useRef(false);
+
   const handleInput = async (field: string, value: string) => {
+    // Skip state updates during IME composition to prevent text duplication
+    if (isComposing.current) return;
+
     const state = currentState.value;
     currentState.value = {
       ...state,
@@ -32,6 +39,16 @@ export function ReportForm() {
       },
     };
     await persistDraft();
+  };
+
+  const handleCompositionStart = () => {
+    isComposing.current = true;
+  };
+
+  const handleCompositionEnd = (field: string, e: CompositionEvent) => {
+    isComposing.current = false;
+    // Update with the final composed value
+    handleInput(field, (e.target as HTMLTextAreaElement | HTMLInputElement).value);
   };
 
   const handleOAuthRepoInput = (e: Event) => {
@@ -102,6 +119,8 @@ export function ReportForm() {
               rows={3}
               value={draft.value.summary}
               onInput={(e) => handleInput("summary", (e.target as HTMLTextAreaElement).value)}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={(e) => handleCompositionEnd("summary", e)}
             />
           </label>
           <label class="full">
@@ -111,6 +130,8 @@ export function ReportForm() {
               rows={4}
               value={draft.value.currentBehavior}
               onInput={(e) => handleInput("currentBehavior", (e.target as HTMLTextAreaElement).value)}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={(e) => handleCompositionEnd("currentBehavior", e)}
             />
           </label>
           <label class="full">
@@ -120,6 +141,8 @@ export function ReportForm() {
               rows={4}
               value={draft.value.expectedBehavior}
               onInput={(e) => handleInput("expectedBehavior", (e.target as HTMLTextAreaElement).value)}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={(e) => handleCompositionEnd("expectedBehavior", e)}
             />
           </label>
           {showLabelSelector && <LabelSelector />}

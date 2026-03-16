@@ -1,4 +1,4 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import {
   labelPresets,
@@ -24,6 +24,7 @@ type LabelDisplayItem = {
 
 export function LabelSelector() {
   const [customInput, setCustomInput] = useState("");
+  const isComposing = useRef(false);
   const repo = useComputed(() => currentState.value.draft.repo);
   const repoLabels = useComputed(() => repositoryLabels.value);
   const loading = useComputed(() => isLoadingLabels.value);
@@ -234,7 +235,16 @@ export function LabelSelector() {
               id="customLabelInput"
               placeholder="Add custom label..."
               value={customInput}
-              onInput={(e) => setCustomInput((e.target as HTMLInputElement).value)}
+              onInput={(e) => {
+                if (!isComposing.current) {
+                  setCustomInput((e.target as HTMLInputElement).value);
+                }
+              }}
+              onCompositionStart={() => { isComposing.current = true; }}
+              onCompositionEnd={(e) => {
+                isComposing.current = false;
+                setCustomInput((e.target as HTMLInputElement).value);
+              }}
               onKeyDown={handleKeyDown}
             />
             <Button
