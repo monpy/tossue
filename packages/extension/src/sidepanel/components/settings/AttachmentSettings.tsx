@@ -1,17 +1,18 @@
+import { useRef } from "preact/hooks";
 import { issueCreationSettings } from "../../store/signals";
 import { updateIssueCreationSettings } from "../../hooks/useSettings";
 import { Card } from "../ui";
 
 export function AttachmentSettings() {
   const settings = issueCreationSettings.value;
+  const isComposing = useRef(false);
 
   const handleAlwaysDownloadChange = (e: Event) => {
     const checked = (e.target as HTMLInputElement).checked;
     updateIssueCreationSettings({ alwaysDownloadAttachments: checked });
   };
 
-  const handlePathPrefixChange = (e: Event) => {
-    const value = (e.target as HTMLInputElement).value;
+  const handlePathPrefixChange = (value: string) => {
     updateIssueCreationSettings({ downloadPathPrefix: value });
   };
 
@@ -34,7 +35,16 @@ export function AttachmentSettings() {
             <input
               type="text"
               value={settings.downloadPathPrefix || ""}
-              onInput={handlePathPrefixChange}
+              onInput={(e) => {
+                if (!isComposing.current) {
+                  handlePathPrefixChange((e.target as HTMLInputElement).value);
+                }
+              }}
+              onCompositionStart={() => { isComposing.current = true; }}
+              onCompositionEnd={(e) => {
+                isComposing.current = false;
+                handlePathPrefixChange((e.target as HTMLInputElement).value);
+              }}
               placeholder="e.g. Tossue/ or projects/bugs/"
             />
             <p class="text-xs text-muted mt-1">

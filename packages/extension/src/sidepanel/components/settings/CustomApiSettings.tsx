@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useState, useRef } from "preact/hooks";
 import { issueCreationSettings } from "../../store/signals";
 import { setCustomApiSettings } from "../../hooks/useSettings";
 import { Card, Button } from "../ui";
@@ -21,6 +21,7 @@ export function CustomApiSettings() {
   const customApi = issueCreationSettings.value.customApi;
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
+  const isComposing = useRef(false);
 
   const handleToggle = (e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -30,11 +31,10 @@ export function CustomApiSettings() {
     });
   };
 
-  const handleEndpointChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
+  const handleEndpointChange = (value: string) => {
     setCustomApiSettings({
       ...customApi,
-      endpoint: target.value,
+      endpoint: value,
     });
     setTestStatus("idle");
     setTestMessage("");
@@ -109,7 +109,16 @@ export function CustomApiSettings() {
                 type="url"
                 placeholder="https://your-api.example.com/issues"
                 value={customApi.endpoint || ""}
-                onInput={handleEndpointChange}
+                onInput={(e) => {
+                  if (!isComposing.current) {
+                    handleEndpointChange((e.target as HTMLInputElement).value);
+                  }
+                }}
+                onCompositionStart={() => { isComposing.current = true; }}
+                onCompositionEnd={(e) => {
+                  isComposing.current = false;
+                  handleEndpointChange((e.target as HTMLInputElement).value);
+                }}
               />
             </label>
 
