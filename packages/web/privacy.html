@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - Tossue</title>
   <meta name="description" content="Privacy Policy for Tossue Chrome Extension and Helper App">
-  <link rel="icon" type="image/png" href="/icon-48.png">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" type="image/png" href="icon-48.png">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <nav>
-      <a href="/" class="logo">
-        <img src="/icon-48.png" alt="Tossue" width="32" height="32">
+      <a href="./" class="logo">
+        <img src="icon-48.png" alt="Tossue" width="32" height="32">
         <span>Tossue</span>
       </a>
       <div class="nav-links">
-        <a href="/#features">Features</a>
-        <a href="/#download">Download</a>
+        <a href="./#features">Features</a>
+        <a href="./#download">Download</a>
         <a href="https://github.com/monpy/tossue" target="_blank" rel="noopener">GitHub</a>
       </div>
     </nav>
@@ -28,101 +28,53 @@
     <p class="last-updated">Last updated: March 17, 2026</p>
 
     <section>
-      <h2>Overview</h2>
+      <h2>No Data Collection</h2>
       <p>
-        Tossue is a Chrome extension and optional desktop helper app that collects
-        debugging context from web pages to help create structured GitHub issues.
-        We are committed to protecting your privacy and being transparent about
-        what data is collected and how it is used.
+        Tossue does <strong>not</strong> collect, store, or transmit any user data to our servers.
+        We do not use analytics, tracking, or any third-party services.
       </p>
     </section>
 
     <section>
-      <h2>Data Collection</h2>
+      <h2>Local Processing Only</h2>
       <p>
-        Tossue collects the following types of data <strong>only when you actively
-        use the extension</strong> to capture debugging context:
-      </p>
-      <ul>
-        <li><strong>Console logs and errors</strong> - JavaScript errors, warnings, and logs from the browser console</li>
-        <li><strong>Network errors</strong> - Failed HTTP requests and their details</li>
-        <li><strong>Component information</strong> - React, Vue, Nuxt, or Next.js component hierarchy on the current page</li>
-        <li><strong>Page events</strong> - User interactions and page navigation events</li>
-        <li><strong>Screenshots and recordings</strong> - Visual captures you explicitly take</li>
-        <li><strong>Page URL and browser info</strong> - Current URL and basic browser/viewport information</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Data Storage</h2>
-      <p>
-        All collected data is stored <strong>locally on your device</strong> using
-        Chrome's built-in storage APIs. Your data is never sent to our servers.
-      </p>
-      <ul>
-        <li>Debugging context is stored temporarily in browser storage</li>
-        <li>GitHub OAuth tokens are stored locally in Chrome's secure storage</li>
-        <li>Settings and preferences are stored locally</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Data Sharing</h2>
-      <p>
-        Tossue only sends data to external services in two cases:
-      </p>
-      <ul>
-        <li>
-          <strong>GitHub API</strong> - When you create an issue, the collected
-          debugging context is sent to GitHub's API to create the issue in your
-          selected repository. This is done using your own GitHub account credentials.
-        </li>
-        <li>
-          <strong>GitHub OAuth</strong> - During sign-in, we use a Cloudflare Worker
-          to complete the OAuth flow. This worker only handles the authentication
-          handshake and does not store any user data.
-        </li>
-      </ul>
-      <p>
-        We do <strong>not</strong> use any analytics, tracking, or advertising services.
-        We do <strong>not</strong> collect or store your data on our servers.
+        All data captured by Tossue (console logs, network errors, screenshots, etc.)
+        is processed and stored <strong>locally on your device</strong>.
+        This data is only sent to GitHub when you explicitly create an issue,
+        using your own GitHub credentials.
       </p>
     </section>
 
     <section>
-      <h2>Your Control</h2>
-      <p>You have full control over your data:</p>
-      <ul>
-        <li>Choose what to capture - customize capture settings in the extension</li>
-        <li>Review before sending - all collected data is visible before creating an issue</li>
-        <li>Clear data anytime - use Chrome's extension storage settings to clear stored data</li>
-        <li>Revoke access - disconnect your GitHub account at any time</li>
-        <li>Uninstall - removing the extension deletes all locally stored data</li>
-      </ul>
+      <h2>GitHub Integration</h2>
+      <p>
+        When you connect your GitHub account, authentication is handled through
+        GitHub's OAuth. We use a minimal Cloudflare Worker to complete the OAuth
+        handshake, which does not store any user data.
+      </p>
     </section>
 
     <section>
-      <h2>Permissions</h2>
+      <h2>Use at Your Own Risk</h2>
       <p>
-        Tossue requires certain Chrome permissions to function. Here's why each is needed:
+        Tossue is provided "as is" without warranty of any kind.
+        You are responsible for:
       </p>
       <ul>
-        <li><strong>activeTab</strong> - Access the current tab to capture debugging context</li>
-        <li><strong>debugger</strong> - Capture network requests and console logs</li>
-        <li><strong>downloads</strong> - Save screenshots and recordings locally</li>
-        <li><strong>identity</strong> - Handle GitHub OAuth authentication</li>
-        <li><strong>scripting</strong> - Inject scripts to detect components</li>
-        <li><strong>storage</strong> - Store settings and captured data locally</li>
-        <li><strong>tabs</strong> - Access tab information for context</li>
-        <li><strong>sidePanel</strong> - Display the extension's side panel UI</li>
+        <li>Reviewing captured data before submitting issues</li>
+        <li>Ensuring no sensitive information is included in bug reports</li>
+        <li>Managing your GitHub account access</li>
       </ul>
+      <p>
+        By using Tossue, you accept full responsibility for how you use the extension
+        and the data you choose to share.
+      </p>
     </section>
 
     <section>
       <h2>Open Source</h2>
       <p>
-        Tossue is open source software licensed under the MIT License.
-        You can review the source code at any time:
+        Tossue is open source under the MIT License. You can review the code at:
         <a href="https://github.com/monpy/tossue" target="_blank" rel="noopener">github.com/monpy/tossue</a>
       </p>
     </section>
@@ -130,18 +82,8 @@
     <section>
       <h2>Contact</h2>
       <p>
-        If you have questions about this privacy policy or Tossue's data practices,
-        please open an issue on GitHub:
+        Questions? Open an issue on GitHub:
         <a href="https://github.com/monpy/tossue/issues" target="_blank" rel="noopener">github.com/monpy/tossue/issues</a>
-      </p>
-    </section>
-
-    <section>
-      <h2>Changes</h2>
-      <p>
-        We may update this privacy policy from time to time. Changes will be posted
-        on this page with an updated revision date. Continued use of Tossue after
-        changes constitutes acceptance of the updated policy.
       </p>
     </section>
   </main>
@@ -149,7 +91,7 @@
   <footer>
     <div class="footer-content">
       <div class="footer-links">
-        <a href="/privacy.html">Privacy Policy</a>
+        <a href="privacy.html">Privacy Policy</a>
         <a href="https://github.com/monpy/tossue/issues" target="_blank" rel="noopener">Report Issues</a>
         <a href="https://github.com/monpy/tossue" target="_blank" rel="noopener">GitHub</a>
       </div>
