@@ -78,3 +78,31 @@ Tossue は、すべてのバグレポートが十分で、構造化され、人�
 - Open source contributors
 - Development teams using GitHub
 
+---
+
+## Screenshots
+
+Store screenshots are located in `docs/screenshots/`. Replace placeholder images with actual screenshots before submission.
+
+| # | File | Description |
+|---|------|-------------|
+| 1 | `01-sidepanel-overview.png` | Side panel with issue creation form |
+| 2 | `02-area-selection.png` | Area selection highlighting an element |
+| 3 | `03-preview.png` | Generated Markdown preview |
+| 4 | `04-issue-created.png` | Issue creation success feedback |
+| 5 | `05-context-collected.png` | Console/network errors display |
+
+**Requirements**:
+- Size: 1280x800 (recommended) or 640x400 (minimum)
+- Format: PNG or JPEG
+- Count: 1-5 images
+
+---
+
+## Promotional Images (Optional)
+
+| Type | Size | Status |
+|------|------|--------|
+| Small Tile | 440x280 | Not created |
+| Large Tile | 920x680 | Not created |
+| Marquee | 1400x560 | Not created |
