@@ -11,6 +11,7 @@ import {
   isCapturing,
   selectAreaStatus,
   captureImageStatus,
+  recordingStatus,
   DEFAULT_LABEL_PRESETS,
   watchedTabInfo,
   currentActiveTabId,
@@ -232,10 +233,7 @@ export async function switchToCurrentTab() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
 
-  // Reset state for the new tab
-  await resetStateAfterCreate();
-
-  // Update tab IDs
+  // Update tab IDs first
   activeTabId.value = tab.id;
   currentActiveTabId.value = tab.id;
 
@@ -246,6 +244,39 @@ export async function switchToCurrentTab() {
     url: tab.url || "",
   };
 
-  // Refresh state for the new tab
-  await refreshState();
+  // Reset background state for the new tab to start fresh
+  await chrome.runtime.sendMessage({
+    type: "RESET_STATE",
+    tabId: tab.id,
+  });
+
+  // Clear local state
+  const repoToKeep = currentState.value.draft.repo;
+  currentState.value = {
+    ...currentState.value,
+    draft: {
+      repo: repoToKeep,
+      summary: "",
+      currentBehavior: "",
+      expectedBehavior: "",
+      labels: [],
+    },
+    screenshots: [],
+    recordings: [],
+    consoleEntries: [],
+    networkEntries: [],
+    selectedArea: null,
+    captureRect: null,
+    actions: [],
+  };
+  selectedLabels.value = new Set();
+
+  // Reset button texts and active states
+  selectAreaButtonText.value = "Select Area";
+  captureButtonText.value = "Start Capture";
+  isSelectingArea.value = false;
+  isCapturing.value = false;
+  selectAreaStatus.value = "";
+  captureImageStatus.value = "";
+  recordingStatus.value = "";
 }
