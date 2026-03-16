@@ -1,4 +1,4 @@
-import { useRef } from "preact/hooks";
+import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import {
   currentState,
@@ -22,13 +22,38 @@ export function ReportForm() {
   const oauthRepos = useComputed(() => oauthRepositories.value);
   const isLoadingRepos = useComputed(() => isLoadingOAuthRepos.value);
 
-  // IME composition state tracking
-  const isComposing = useRef(false);
+  // Refs for uncontrolled inputs (to support IME properly)
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
+  const currentBehaviorRef = useRef<HTMLTextAreaElement>(null);
+  const expectedBehaviorRef = useRef<HTMLTextAreaElement>(null);
+
+  // Track previous draft to detect reset
+  const prevDraftRef = useRef({ summary: "", currentBehavior: "", expectedBehavior: "" });
+
+  // Sync DOM with signal state on reset (when fields become empty from non-empty)
+  useEffect(() => {
+    const d = draft.value;
+    const prev = prevDraftRef.current;
+    const isReset =
+      d.summary === "" &&
+      d.currentBehavior === "" &&
+      d.expectedBehavior === "" &&
+      (prev.summary !== "" || prev.currentBehavior !== "" || prev.expectedBehavior !== "");
+
+    if (isReset) {
+      if (summaryRef.current) summaryRef.current.value = "";
+      if (currentBehaviorRef.current) currentBehaviorRef.current.value = "";
+      if (expectedBehaviorRef.current) expectedBehaviorRef.current.value = "";
+    }
+
+    prevDraftRef.current = {
+      summary: d.summary,
+      currentBehavior: d.currentBehavior,
+      expectedBehavior: d.expectedBehavior,
+    };
+  }, [draft.value.summary, draft.value.currentBehavior, draft.value.expectedBehavior]);
 
   const handleInput = async (field: string, value: string) => {
-    // Skip state updates during IME composition to prevent text duplication
-    if (isComposing.current) return;
-
     const state = currentState.value;
     currentState.value = {
       ...state,
@@ -39,16 +64,6 @@ export function ReportForm() {
       },
     };
     await persistDraft();
-  };
-
-  const handleCompositionStart = () => {
-    isComposing.current = true;
-  };
-
-  const handleCompositionEnd = (field: string, e: CompositionEvent) => {
-    isComposing.current = false;
-    // Update with the final composed value
-    handleInput(field, (e.target as HTMLTextAreaElement | HTMLInputElement).value);
   };
 
   const handleOAuthRepoInput = (e: Event) => {
@@ -115,34 +130,31 @@ export function ReportForm() {
           <label class="full">
             <span>Issue Title</span>
             <textarea
+              ref={summaryRef}
               id="summary"
               rows={3}
-              value={draft.value.summary}
+              defaultValue={draft.value.summary}
               onInput={(e) => handleInput("summary", (e.target as HTMLTextAreaElement).value)}
-              onCompositionStart={handleCompositionStart}
-              onCompositionEnd={(e) => handleCompositionEnd("summary", e)}
             />
           </label>
           <label class="full">
             <span>Current Behavior</span>
             <textarea
+              ref={currentBehaviorRef}
               id="currentBehavior"
               rows={4}
-              value={draft.value.currentBehavior}
+              defaultValue={draft.value.currentBehavior}
               onInput={(e) => handleInput("currentBehavior", (e.target as HTMLTextAreaElement).value)}
-              onCompositionStart={handleCompositionStart}
-              onCompositionEnd={(e) => handleCompositionEnd("currentBehavior", e)}
             />
           </label>
           <label class="full">
             <span>Expected Behavior</span>
             <textarea
+              ref={expectedBehaviorRef}
               id="expectedBehavior"
               rows={4}
-              value={draft.value.expectedBehavior}
+              defaultValue={draft.value.expectedBehavior}
               onInput={(e) => handleInput("expectedBehavior", (e.target as HTMLTextAreaElement).value)}
-              onCompositionStart={handleCompositionStart}
-              onCompositionEnd={(e) => handleCompositionEnd("expectedBehavior", e)}
             />
           </label>
           {showLabelSelector && <LabelSelector />}
