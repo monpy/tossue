@@ -81,6 +81,7 @@ export async function setCreateMethod(method: IssueCreateMethod) {
 export async function setCustomApiSettings(settings: {
   enabled: boolean;
   endpoint?: string;
+  skipBuiltinCreate?: boolean;
 }) {
   issueCreationSettings.value = {
     ...issueCreationSettings.value,
