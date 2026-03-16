@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tossue - AI-Ready Bug Reports</title>
+  <meta name="description" content="Collect structured debugging context and create GitHub issues that AI can actually solve.">
+  <link rel="icon" type="image/png" href="/icon-48.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="/" class="logo">
+        <img src="/icon-48.png" alt="Tossue" width="32" height="32">
+        <span>Tossue</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#modes">Modes</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/monpy/tossue" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <img src="/icon-128.png" alt="Tossue Logo" width="96" height="96" class="hero-logo">
+      <h1>AI-Ready Bug Reports</h1>
+      <p class="tagline">
+        Stop writing detailed bug reports manually.<br>
+        Let Tossue collect the context AI needs to fix issues automatically.
+      </p>
+      <div class="cta-buttons">
+        <a href="#download" class="btn btn-primary">Get Started</a>
+        <a href="https://github.com/monpy/tossue" class="btn btn-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </section>
+
+    <section class="problem">
+      <h2>The Problem</h2>
+      <p>
+        AI can solve most engineering problems today. But there's a bottleneck:
+        <strong>low-quality bug reports</strong>.
+      </p>
+      <p>
+        Nobody has time to write detailed reproduction steps, collect console logs,
+        capture network errors, and note the exact component state.
+        So issues get filed with minimal context, and AI tools struggle to help.
+      </p>
+    </section>
+
+    <section class="solution">
+      <h2>The Solution</h2>
+      <p>
+        Tossue automatically captures everything AI needs:
+      </p>
+      <ul class="feature-list">
+        <li>Console errors and warnings</li>
+        <li>Network request failures</li>
+        <li>React / Vue / Nuxt / Next.js component hierarchy</li>
+        <li>Page navigation and events timeline</li>
+        <li>Screenshots and screen recordings</li>
+        <li>Browser and viewport information</li>
+      </ul>
+      <p>
+        One click creates a GitHub issue with full context.
+        Assign to GitHub Copilot and let AI handle the rest.
+      </p>
+    </section>
+
+    <section id="features" class="features">
+      <h2>Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>Component Detection</h3>
+          <p>Automatically detects React, Vue, Nuxt, and Next.js components in the page.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Error Capture</h3>
+          <p>Captures console logs, errors, and failed network requests without manual copying.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Visual Evidence</h3>
+          <p>Take screenshots or record your screen to show exactly what happened.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Timeline View</h3>
+          <p>See page navigations, events, and errors in chronological order.</p>
+        </div>
+        <div class="feature-card">
+          <h3>GitHub Integration</h3>
+          <p>Create issues directly to your repository with one click.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Customizable</h3>
+          <p>Configure what to capture and how to format issues for your workflow.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="modes" class="modes">
+      <h2>Choose Your Workflow</h2>
+      <p class="modes-intro">Start simple, level up as needed. Pick the automation level that fits you.</p>
+
+      <div class="mode-steps">
+        <div class="mode-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Copy Mode</h3>
+            <p>Just want the data? Copy issue content and attachments to clipboard. Paste wherever you need.</p>
+            <span class="step-tag">Quick Start</span>
+          </div>
+        </div>
+
+        <div class="step-connector"></div>
+
+        <div class="mode-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>OAuth Mode</h3>
+            <p>Connect GitHub account, select repo, create issues directly. Images need manual upload.</p>
+            <span class="step-tag">Direct Integration</span>
+          </div>
+        </div>
+
+        <div class="step-connector"></div>
+
+        <div class="mode-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Helper Mode</h3>
+            <p>Full automation with desktop app. Uses <code>gh</code> CLI with auto-attached images and recordings.</p>
+            <span class="step-tag">Full Auto</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mode-custom">
+        <h3>Custom Endpoint</h3>
+        <p>Building your own workflow? Send captured data to any API endpoint. Create custom integrations for your team.</p>
+      </div>
+    </section>
+
+    <section id="screenshots" class="screenshots">
+      <h2>See It in Action</h2>
+      <div class="screenshot-grid">
+        <div class="screenshot-item">
+          <img src="/screenshots/01-sidepanel-overview.png" alt="Sidepanel Overview" loading="lazy">
+          <p>Sidepanel with captured context</p>
+        </div>
+        <div class="screenshot-item">
+          <img src="/screenshots/02-area-selection.png" alt="Area Selection" loading="lazy">
+          <p>Select area for screenshot</p>
+        </div>
+        <div class="screenshot-item">
+          <img src="/screenshots/03-preview.png" alt="Issue Preview" loading="lazy">
+          <p>Preview before creating issue</p>
+        </div>
+        <div class="screenshot-item">
+          <img src="/screenshots/04-issue-created.png" alt="Issue Created" loading="lazy">
+          <p>Issue created on GitHub</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="download" class="download">
+      <h2>Download</h2>
+      <div class="download-grid">
+        <div class="download-card">
+          <h3>Chrome Extension</h3>
+          <p>Install from Chrome Web Store</p>
+          <a href="#" class="btn btn-primary">Coming Soon</a>
+        </div>
+        <div class="download-card">
+          <h3>Helper App</h3>
+          <p>Optional desktop app for advanced features like screen recording.</p>
+          <a href="https://github.com/monpy/tossue/releases" class="btn btn-secondary" target="_blank" rel="noopener">Download from GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="feedback">
+      <h2>Feedback</h2>
+      <p>
+        Found a bug? Have a feature idea? We'd love to hear from you!
+      </p>
+      <a href="https://github.com/monpy/tossue/issues/new" class="btn btn-secondary" target="_blank" rel="noopener">Open an Issue</a>
+    </section>
+
+    <section class="support">
+      <h2>Support</h2>
+      <p>
+        Tossue is open source and free to use.
+        If you find it useful, consider supporting development:
+      </p>
+      <a href="https://buymeacoffee.com/tossue" class="btn btn-support" target="_blank" rel="noopener">Buy Me a Coffee</a>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="https://github.com/monpy/tossue/issues" target="_blank" rel="noopener">Report Issues</a>
+        <a href="https://github.com/monpy/tossue" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <p class="copyright">
+        &copy; 2026 UNIBA - Z1 - MJ (monpy). Licensed under MIT.
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

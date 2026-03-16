@@ -17,7 +17,9 @@
     "deploy:oauth-worker": "npm run deploy -w @tossue/oauth-worker",
     "dev:demo:nuxt": "npm run dev -w @tossue/demo-nuxt",
     "dev:demo:next": "npm run dev -w @tossue/demo-next",
-    "dev:custom-api": "npm run start -w tossue-custom-api-demo"
+    "dev:custom-api": "npm run start -w tossue-custom-api-demo",
+    "dev:web": "npm run dev -w @tossue/web",
+    "build:web": "npm run build -w @tossue/web"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
